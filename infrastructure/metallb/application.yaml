@@ -3,8 +3,16 @@ kind: Application
 metadata:
   name: metallb
   namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   project: default
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: bgppeers.metallb.io
+      jsonPointers:
+        - /spec/conversion/webhook/clientConfig/caBundle
   sources:
     - repoURL: https://metallb.github.io/metallb
       chart: metallb
@@ -35,7 +43,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "2"
 spec:
-  project: homelab
+  project: default
   source:
     repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
     targetRevision: HEAD

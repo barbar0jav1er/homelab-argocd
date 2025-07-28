@@ -10,9 +10,10 @@ spec:
   source:
     repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
     targetRevision: HEAD
-    path: infrastructure
+    path: .
     directory:
-      include: "infrastructure-app.yaml"
+      recurse: true
+      include: "{infrastructure/infrastructure-app.yaml,apps/apps-app.yaml}"
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd
