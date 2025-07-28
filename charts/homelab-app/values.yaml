@@ -1,0 +1,43 @@
+# Default values for homelab-app
+nameOverride: ""
+fullnameOverride: ""
+
+# Application configuration
+app:
+  name: "example-app"
+  image:
+    repository: nginx
+    tag: "1.25-alpine"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+
+# Ingress configuration - automatically uses app.name.cubancodelab.net
+ingress:
+  enabled: true
+  className: "traefik"
+  domain: "cubancodelab.net"
+  # hostname is automatically calculated as: {{ .Values.app.name }}.{{ .Values.ingress.domain }}
+  tls:
+    enabled: false
+    # secretName is automatically calculated as: {{ .Values.app.name }}-tls
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web,websecure
+
+# Resource configuration
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 64Mi
+
+# Pod configuration  
+replicaCount: 1
+nodeSelector: {}
+tolerations: []
+affinity: {}
