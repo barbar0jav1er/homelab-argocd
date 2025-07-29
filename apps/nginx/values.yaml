@@ -1,2 +1,9 @@
 app:
   name: "nginx"
+
+ingress:
+  enabled: true
+  tls:
+    enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
