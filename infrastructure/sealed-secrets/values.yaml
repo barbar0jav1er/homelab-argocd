@@ -1,0 +1,44 @@
+# SealedSecrets Controller Configuration
+# Deploys to kube-system namespace for compatibility with kubeseal CLI default behavior
+
+# Controller settings
+controller:
+  create: true
+  
+# Service Account settings
+serviceAccount:
+  create: true
+  name: sealed-secrets-controller
+
+# RBAC settings
+rbac:
+  create: true
+
+# Resource limits
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Security context
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+
+# Priority class for system critical workloads
+priorityClassName: "system-cluster-critical"
+
+# Metrics
+metrics:
+  serviceMonitor:
+    enabled: false
