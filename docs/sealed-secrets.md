@@ -6,6 +6,14 @@ This guide explains how to use SealedSecrets for managing encrypted secrets in t
 
 SealedSecrets allows you to encrypt Kubernetes secrets that can be safely stored in Git repositories. The sealed-secrets controller running in your cluster can decrypt these secrets.
 
+## Homelab Configuration Note
+
+⚠️ **Important**: This homelab uses a custom SealedSecrets deployment via Helm. When using `kubeseal` commands, you must specify:
+- `--controller-name=sealed-secrets`
+- `--controller-namespace=kube-system`
+
+All examples in this guide include these parameters for this specific setup.
+
 ## Installing kubeseal CLI
 
 ### macOS (Homebrew)
@@ -23,7 +31,53 @@ sudo install -m 755 kubeseal /usr/local/bin/kubeseal
 
 ## Creating SealedSecrets
 
-### Method 1: From existing Secret YAML
+**Important**: When using this homelab setup, you must specify the controller name and namespace:
+
+### Method 1: Direct from literals (Recommended)
+```bash
+# Database credentials example
+kubectl create secret generic database-secret \
+  --from-literal=username=admin \
+  --from-literal=password=supersecret123 \
+  --from-literal=host=postgres.homelab.local \
+  --dry-run=client -o yaml | \
+  kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system -o yaml > database-sealedsecret.yaml
+
+# Apply the SealedSecret
+kubectl apply -f database-sealedsecret.yaml
+```
+
+### Method 2: API Keys and Tokens
+```bash
+# API keys example
+kubectl create secret generic api-secrets \
+  --from-literal=github-token=ghp_xxxxxxxxxxxx \
+  --from-literal=slack-webhook=https://hooks.slack.com/services/xxx \
+  --dry-run=client -o yaml | \
+  kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system -o yaml > api-sealedsecret.yaml
+```
+
+### Method 3: From files
+```bash
+# Configuration files example
+kubectl create secret generic app-config \
+  --from-file=config.json \
+  --from-file=.env \
+  --dry-run=client -o yaml | \
+  kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system -o yaml > config-sealedsecret.yaml
+```
+
+### Method 4: TLS Certificates
+```bash
+# TLS certificate example
+kubectl create secret tls tls-secret \
+  --cert=path/to/tls.crt \
+  --key=path/to/tls.key \
+  --dry-run=client -o yaml | \
+  kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system -o yaml > tls-sealedsecret.yaml
+```
+
+### Method 5: From existing Secret YAML
 ```bash
 # Create a regular secret file first
 cat <<EOF > my-secret.yaml
@@ -39,28 +93,10 @@ data:
 EOF
 
 # Convert to SealedSecret
-kubeseal -f my-secret.yaml -w my-sealedsecret.yaml
+kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system -f my-secret.yaml -w my-sealedsecret.yaml
 
 # Clean up the plain secret file
 rm my-secret.yaml
-```
-
-### Method 2: Direct from literals
-```bash
-kubectl create secret generic my-secret \
-  --from-literal=username=admin \
-  --from-literal=password=password \
-  --dry-run=client -o yaml | \
-  kubeseal -o yaml > my-sealedsecret.yaml
-```
-
-### Method 3: From files
-```bash
-kubectl create secret generic my-secret \
-  --from-file=config.json \
-  --from-file=api-key.txt \
-  --dry-run=client -o yaml | \
-  kubeseal -o yaml > my-sealedsecret.yaml
 ```
 
 ## Example SealedSecrets
@@ -123,27 +159,27 @@ spec:
 
 ### Verify controller is running
 ```bash
-kubectl get pods -n kube-system -l name=sealed-secrets-controller
+kubectl get pods -n kube-system -l app.kubernetes.io/name=sealed-secrets
 ```
 
 ### Check controller logs
 ```bash
-kubectl logs -n kube-system -l name=sealed-secrets-controller
+kubectl logs -n kube-system -l app.kubernetes.io/name=sealed-secrets
 ```
 
 ### Fetch public certificate
 ```bash
-kubeseal --fetch-cert > public.pem
+kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system --fetch-cert > public.pem
 ```
 
 ### Encrypt with specific certificate
 ```bash
-kubeseal --cert public.pem -f secret.yaml -w sealedsecret.yaml
+kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system --cert public.pem -f secret.yaml -w sealedsecret.yaml
 ```
 
 ### Validate SealedSecret format
 ```bash
-kubeseal --validate -f sealedsecret.yaml
+kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system --validate -f sealedsecret.yaml
 ```
 
 ## Scopes and Security
@@ -156,10 +192,10 @@ SealedSecrets supports three scopes:
 
 ```bash
 # Namespace-wide scope
-kubeseal --scope namespace-wide -f secret.yaml -w sealedsecret.yaml
+kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system --scope namespace-wide -f secret.yaml -w sealedsecret.yaml
 
-# Cluster-wide scope
-kubeseal --scope cluster-wide -f secret.yaml -w sealedsecret.yaml
+# Cluster-wide scope  
+kubeseal --controller-name=sealed-secrets --controller-namespace=kube-system --scope cluster-wide -f secret.yaml -w sealedsecret.yaml
 ```
 
 ## Key Management
@@ -178,11 +214,47 @@ kubectl delete pod -n kube-system -l name=sealed-secrets-controller
 kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealed-secrets-keys.yaml
 ```
 
+## Key Backup and Restore
+
+### Automated Backup Script
+Use the provided bootstrap script to backup your SealedSecrets keys:
+
+```bash
+# Backup keys to default location
+./bootstrap/backup-sealed-secrets-keys.sh
+
+# Backup to custom directory
+BACKUP_DIR=/secure/backup ./bootstrap/backup-sealed-secrets-keys.sh
+```
+
+### Automated Restore Script
+Restore keys from backup when recovering a cluster:
+
+```bash
+# Interactive restore
+./bootstrap/restore-sealed-secrets-keys.sh ./sealed-secrets-backup/sealed-secrets-keys-latest.yaml
+
+# Force restore (skip confirmations)
+./bootstrap/restore-sealed-secrets-keys.sh ./sealed-secrets-backup/sealed-secrets-keys-20240129-143022.yaml --force
+```
+
+### Manual Key Management
+```bash
+# Manual backup
+kubectl get secret -n kube-system -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > sealed-secrets-keys.yaml
+
+# Manual restore
+kubectl apply -f sealed-secrets-keys.yaml
+kubectl rollout restart deployment/sealed-secrets-controller -n kube-system
+```
+
 ## Best Practices
 
 1. **Never commit plain secrets** to Git
 2. **Use appropriate scopes** for your security requirements
-3. **Backup your encryption keys** regularly
-4. **Monitor controller logs** for any decryption issues
-5. **Use different secrets for different environments**
-6. **Regularly rotate sensitive credentials**
+3. **Backup your encryption keys** regularly using the provided scripts
+4. **Store key backups securely** outside the cluster
+5. **Test restore procedures** periodically
+6. **Monitor controller logs** for any decryption issues
+7. **Use different secrets for different environments**
+8. **Regularly rotate sensitive credentials**
