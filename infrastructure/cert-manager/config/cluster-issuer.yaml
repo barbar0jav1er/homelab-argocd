@@ -1,0 +1,62 @@
+---
+# Let's Encrypt Staging ClusterIssuer for testing
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  acme:
+    # Let's Encrypt staging server URL
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    # Email address for ACME registration
+    email: root@cubancodelab.net
+    # Name of the Kubernetes secret to store the ACME private key
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    # DNS01 solver using Cloudflare
+    solvers:
+    - dns01:
+        cloudflare:
+          email: root@cubancodelab.net
+          apiTokenSecretRef:
+            name: cloudflare-api-token-secret
+            key: api-token
+
+---
+# Let's Encrypt Production ClusterIssuer
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  acme:
+    # Let's Encrypt production server URL
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # Email address for ACME registration
+    email: root@cubancodelab.net
+    # Name of the Kubernetes secret to store the ACME private key
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    # DNS01 solver using Cloudflare
+    solvers:
+    - dns01:
+        cloudflare:
+          email: root@cubancodelab.net
+          apiTokenSecretRef:
+            name: cloudflare-api-token-secret
+            key: api-token
+
+---
+# Self-signed ClusterIssuer for internal certificates
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  selfSigned: {}

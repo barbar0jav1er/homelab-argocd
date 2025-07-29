@@ -1,0 +1,134 @@
+# cert-manager Configuration
+# Based on official values.yaml schema
+
+# Install CRDs as part of the Helm release
+crds:
+  enabled: true
+  keep: true
+
+# Global configuration
+global:
+  logLevel: 2
+  leaderElection:
+    namespace: "cert-manager"
+
+# Controller configuration (main cert-manager controller)
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# Pod Security Context (for controller)
+securityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container Security Context (for controller)
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+
+# Node selector for Linux nodes (controller)
+nodeSelector:
+  kubernetes.io/os: linux
+
+# Webhook configuration
+webhook:
+  timeoutSeconds: 30
+  
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+  
+  nodeSelector:
+    kubernetes.io/os: linux
+
+# CA Injector configuration
+cainjector:
+  enabled: true
+  
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+  
+  nodeSelector:
+    kubernetes.io/os: linux
+
+# Startup API check configuration
+startupapicheck:
+  enabled: true
+  backoffLimit: 4
+  
+  securityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+  
+  nodeSelector:
+    kubernetes.io/os: linux
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+# Enable prometheus metrics
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: false
+
+# Feature gates
+featureGates: ""
+
+# Enable owner reference from Certificate to Secret
+enableCertificateOwnerRef: false
