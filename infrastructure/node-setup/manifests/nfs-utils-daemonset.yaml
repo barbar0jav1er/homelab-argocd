@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: nfs-utils-installer
+  namespace: kube-system
+  labels:
+    app: nfs-utils-installer
+spec:
+  selector:
+    matchLabels:
+      app: nfs-utils-installer
+  template:
+    metadata:
+      labels:
+        app: nfs-utils-installer
+    spec:
+      hostNetwork: true
+      hostPID: true
+      initContainers:
+      - name: nfs-utils-installer
+        image: ubuntu:24.04
+        command:
+        - /bin/bash
+        - -c
+        - |
+          set -e
+          echo "Installing NFS utils on node..."
+          
+          # Check if already installed
+          if chroot /host which mount.nfs4 >/dev/null 2>&1; then
+            echo "NFS utils already installed"
+            exit 0
+          fi
+          
+          # Install NFS utils
+          chroot /host apt-get update
+          chroot /host apt-get install -y nfs-common
+          
+          echo "NFS utils installation completed"
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: host-root
+          mountPath: /host
+          mountPropagation: Bidirectional
+      containers:
+      - name: pause
+        image: gcr.io/google-containers/pause:3.1
+        resources:
+          requests:
+            cpu: 1m
+            memory: 1Mi
+      volumes:
+      - name: host-root
+        hostPath:
+          path: /
+      tolerations:
+      - operator: Exists
+      nodeSelector:
+        kubernetes.io/os: linux
