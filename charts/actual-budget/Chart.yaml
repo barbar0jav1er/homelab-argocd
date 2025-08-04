@@ -1,0 +1,16 @@
+apiVersion: v2
+name: actual-budget
+description: A Helm chart for Actual Budget - personal finance and budgeting app
+type: application
+version: 0.1.0
+appVersion: "24.12.0"
+home: https://actualbudget.org/
+sources:
+  - https://github.com/actualbudget/actual-server
+keywords:
+  - budget
+  - finance
+  - personal-finance
+  - budgeting
+maintainers:
+  - name: homelab
