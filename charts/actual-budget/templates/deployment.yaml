@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "actual-budget.fullname" . }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "actual-budget.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  selector:
+    matchLabels:
+      {{- include "actual-budget.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "actual-budget.selectorLabels" . | nindent 8 }}
+    spec:
+      containers:
+      - name: actual-budget
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+          name: http
+        env:
+        {{- range $key, $value := .Values.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        volumeMounts:
+        - name: data
+          mountPath: /data
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 5
+          timeoutSeconds: 3
+          periodSeconds: 5
+      volumes:
+      - name: data
+        {{- if .Values.persistence.hostPath.enabled }}
+        hostPath:
+          path: {{ .Values.persistence.hostPath.path }}
+          type: DirectoryOrCreate
+        {{- else if .Values.persistence.enabled }}
+        persistentVolumeClaim:
+          claimName: {{ include "actual-budget.fullname" . }}-pvc
+        {{- else }}
+        emptyDir: {}
+        {{- end }}
