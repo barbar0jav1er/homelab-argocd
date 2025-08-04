@@ -32,7 +32,7 @@ persistence:
     enabled: true
     path: /opt/actual-budget
 
-# Environment variables for multiuser support
+# Environment variables for multiuser support with OpenID
 env:
   # Default port (should match service.port)
   ACTUAL_PORT: "5006"
@@ -40,10 +40,12 @@ env:
   ACTUAL_UPLOAD_FILE_SYNC_SIZE_LIMIT_MB: "20"
   ACTUAL_UPLOAD_SYNC_ENCRYPTED_FILE_SYNC_SIZE_LIMIT_MB: "50"
   ACTUAL_UPLOAD_FILE_SIZE_LIMIT_MB: "20"
-  # Enable multiuser support - users can create accounts on login
-  ACTUAL_USER_CREATION_MODE: "login"
-  # Optional: Set login method (default allows creating users)
-  ACTUAL_LOGIN_METHOD: "header"
+  # OpenID Connect configuration
+  ACTUAL_OPENID_DISCOVERY_URL: "https://auth.v2.cubancodelab.net/application/o/actual-budget/.well-known/openid_configuration"
+  ACTUAL_OPENID_CLIENT_ID: "actual-budget"
+  # Client secret will be set via sealed secret
+  ACTUAL_OPENID_CLIENT_SECRET: ""
+  ACTUAL_SERVER_HOSTNAME: "https://actual.v2.cubancodelab.net"
 
 # Ingress configuration
 ingress:
