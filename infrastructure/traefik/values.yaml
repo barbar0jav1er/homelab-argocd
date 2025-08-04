@@ -31,6 +31,8 @@ providers:
   kubernetesIngress:
     enabled: true
     allowExternalNameServices: true
+    publishedService:
+      enabled: true
 
 globalArguments:
   - "--global.checknewversion=false"
