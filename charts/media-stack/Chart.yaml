@@ -1,0 +1,6 @@
+apiVersion: v2
+name: media-stack
+description: A Helm chart for media management stack (Jellyfin, Radarr, Sonarr, Jellyseerr, Prowlarr, qBittorrent)
+type: application
+version: 0.1.0
+appVersion: "1.0"

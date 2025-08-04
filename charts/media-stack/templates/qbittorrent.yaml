@@ -1,0 +1,80 @@
+{{- if .Values.qbittorrent.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "media-stack.fullname" . }}-qbittorrent
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "media-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: qbittorrent
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "media-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: qbittorrent
+  template:
+    metadata:
+      labels:
+        {{- include "media-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: qbittorrent
+    spec:
+      containers:
+      - name: qbittorrent
+        image: "{{ .Values.qbittorrent.image.repository }}:{{ .Values.qbittorrent.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.qbittorrent.service.port }}
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: TZ
+          value: "UTC"
+        - name: WEBUI_PORT
+          value: {{ .Values.qbittorrent.env.WEBUI_PORT | quote }}
+        {{- if .Values.qbittorrent.existingSecret.name }}
+        - name: QBT_WEBUI_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.qbittorrent.existingSecret.name }}
+              key: {{ .Values.qbittorrent.existingSecret.usernameKey }}
+        - name: QBT_WEBUI_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ .Values.qbittorrent.existingSecret.name }}
+              key: {{ .Values.qbittorrent.existingSecret.passwordKey }}
+        {{- end }}
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: downloads
+          mountPath: /downloads
+        resources:
+          {{- toYaml .Values.qbittorrent.resources | nindent 10 }}
+      volumes:
+      - name: config
+        emptyDir: {}
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: {{ include "media-stack.fullname" . }}-nfs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "media-stack.fullname" . }}-qbittorrent
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "media-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: qbittorrent
+spec:
+  type: {{ .Values.qbittorrent.service.type }}
+  ports:
+  - port: {{ .Values.qbittorrent.service.port }}
+    targetPort: {{ .Values.qbittorrent.service.port }}
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "media-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: qbittorrent
+{{- end }}
