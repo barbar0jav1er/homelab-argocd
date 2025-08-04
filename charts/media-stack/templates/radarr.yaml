@@ -1,0 +1,71 @@
+{{- if .Values.radarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "media-stack.fullname" . }}-radarr
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "media-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: radarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "media-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: radarr
+  template:
+    metadata:
+      labels:
+        {{- include "media-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: radarr
+    spec:
+      containers:
+      - name: radarr
+        image: "{{ .Values.radarr.image.repository }}:{{ .Values.radarr.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.radarr.service.port }}
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: TZ
+          value: "UTC"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        - name: media
+          mountPath: /media
+        - name: downloads
+          mountPath: /downloads
+        resources:
+          {{- toYaml .Values.radarr.resources | nindent 10 }}
+      volumes:
+      - name: config
+        emptyDir: {}
+      - name: media
+        persistentVolumeClaim:
+          claimName: {{ include "media-stack.fullname" . }}-nfs-pvc
+      - name: downloads
+        persistentVolumeClaim:
+          claimName: {{ include "media-stack.fullname" . }}-nfs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "media-stack.fullname" . }}-radarr
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "media-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: radarr
+spec:
+  type: {{ .Values.radarr.service.type }}
+  ports:
+  - port: {{ .Values.radarr.service.port }}
+    targetPort: {{ .Values.radarr.service.port }}
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "media-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: radarr
+{{- end }}

@@ -1,0 +1,61 @@
+{{- if .Values.prowlarr.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "media-stack.fullname" . }}-prowlarr
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "media-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prowlarr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "media-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: prowlarr
+  template:
+    metadata:
+      labels:
+        {{- include "media-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: prowlarr
+    spec:
+      containers:
+      - name: prowlarr
+        image: "{{ .Values.prowlarr.image.repository }}:{{ .Values.prowlarr.image.tag }}"
+        ports:
+        - containerPort: {{ .Values.prowlarr.service.port }}
+        env:
+        - name: PUID
+          value: "1000"
+        - name: PGID
+          value: "1000"
+        - name: TZ
+          value: "UTC"
+        volumeMounts:
+        - name: config
+          mountPath: /config
+        resources:
+          {{- toYaml .Values.prowlarr.resources | nindent 10 }}
+      volumes:
+      - name: config
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "media-stack.fullname" . }}-prowlarr
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    {{- include "media-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: prowlarr
+spec:
+  type: {{ .Values.prowlarr.service.type }}
+  ports:
+  - port: {{ .Values.prowlarr.service.port }}
+    targetPort: {{ .Values.prowlarr.service.port }}
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "media-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: prowlarr
+{{- end }}
