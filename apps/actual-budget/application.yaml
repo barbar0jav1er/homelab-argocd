@@ -9,13 +9,16 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
-  source:
-    repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
+  sources:
+  - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
     targetRevision: HEAD
     path: charts/actual-budget
     helm:
       valueFiles:
         - values.yaml
+  - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
+    targetRevision: HEAD
+    path: charts/actual-budget/config
   destination:
     server: https://kubernetes.default.svc
     namespace: actual-budget

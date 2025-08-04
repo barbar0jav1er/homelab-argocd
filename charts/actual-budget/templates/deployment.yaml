@@ -27,6 +27,11 @@ spec:
         - name: {{ $key }}
           value: {{ $value | quote }}
         {{- end }}
+        - name: ACTUAL_OPENID_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: actual-budget-secrets
+              key: ACTUAL_OPENID_CLIENT_SECRET
         volumeMounts:
         - name: data
           mountPath: /data
