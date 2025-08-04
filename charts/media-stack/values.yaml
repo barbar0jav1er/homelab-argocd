@@ -11,7 +11,7 @@ jellyfin:
   enabled: true
   image:
     repository: jellyfin/jellyfin
-    tag: "10.8.13"
+    tag: "10.10.3"
   service:
     type: ClusterIP
     port: 8096
@@ -30,7 +30,7 @@ radarr:
   enabled: true
   image:
     repository: linuxserver/radarr
-    tag: "5.2.6"
+    tag: "5.12.2"
   service:
     type: ClusterIP
     port: 7878
@@ -46,7 +46,7 @@ sonarr:
   enabled: true
   image:
     repository: linuxserver/sonarr
-    tag: "4.0.0"
+    tag: "4.0.15"
   service:
     type: ClusterIP
     port: 8989
@@ -62,7 +62,7 @@ jellyseerr:
   enabled: true
   image:
     repository: fallenbagel/jellyseerr
-    tag: "1.7.0"
+    tag: "1.9.2"
   service:
     type: ClusterIP
     port: 5055
@@ -78,7 +78,7 @@ prowlarr:
   enabled: true
   image:
     repository: linuxserver/prowlarr
-    tag: "1.11.4"
+    tag: "1.37.0"
   service:
     type: ClusterIP
     port: 9696
@@ -94,7 +94,7 @@ qbittorrent:
   enabled: true
   image:
     repository: linuxserver/qbittorrent
-    tag: "4.6.2"
+    tag: "5.1.2"
   service:
     type: ClusterIP
     port: 8080
