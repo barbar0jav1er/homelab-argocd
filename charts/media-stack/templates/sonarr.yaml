@@ -36,17 +36,14 @@ spec:
           mountPath: /config
         - name: media
           mountPath: /media
-        - name: downloads
-          mountPath: /downloads
         resources:
           {{- toYaml .Values.sonarr.resources | nindent 10 }}
       volumes:
       - name: config
-        emptyDir: {}
+        hostPath:
+          path: /opt/media-stack/sonarr
+          type: DirectoryOrCreate
       - name: media
-        persistentVolumeClaim:
-          claimName: {{ include "media-stack.fullname" . }}-nfs-pvc
-      - name: downloads
         persistentVolumeClaim:
           claimName: {{ include "media-stack.fullname" . }}-nfs-pvc
 ---
