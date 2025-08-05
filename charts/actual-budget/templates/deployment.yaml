@@ -32,6 +32,21 @@ spec:
             secretKeyRef:
               name: actual-budget-secrets
               key: ACTUAL_OPENID_CLIENT_SECRET
+        - name: ACTUAL_OPENID_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              name: actual-budget-secrets
+              key: ACTUAL_OPENID_CLIENT_ID
+        - name: ACTUAL_OPENID_DISCOVERY_URL
+          valueFrom:
+            secretKeyRef:
+              name: actual-budget-secrets
+              key: ACTUAL_OPENID_DISCOVERY_URL
+        - name: ACTUAL_OPENID_SERVER_HOSTNAME
+          valueFrom:
+            secretKeyRef:
+              name: actual-budget-secrets
+              key: ACTUAL_OPENID_SERVER_HOSTNAME
         volumeMounts:
         - name: data
           mountPath: /data
