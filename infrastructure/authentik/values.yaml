@@ -1,37 +1,15 @@
 global:
   deploymentAnnotations:
-    secret.reloader.stakater.com/reload: "authentik-secrets"
+    secret.reloader.stakater.com/reload: "authentik"
 
-# Authentik configuration
+# Authentik configuration  
 authentik:
-  # PostgreSQL connection settings - password via environment variable
-  postgresql:
-    password: ""  # Will be set via environment variable
-    
-server:
-  # Environment variables from sealed secret
-  env:
-    - name: AUTHENTIK_SECRET_KEY
-      valueFrom:
-        secretKeyRef:
-          name: authentik-secrets
-          key: AUTHENTIK_SECRET_KEY
-    - name: AUTHENTIK_POSTGRESQL__PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: authentik-secrets
-          key: POSTGRES_PASSWORD
-    - name: AUTHENTIK_BOOTSTRAP_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: authentik-secrets
-          key: AUTHENTIK_BOOTSTRAP_PASSWORD
-    - name: AUTHENTIK_BOOTSTRAP_TOKEN
-      valueFrom:
-        secretKeyRef:
-          name: authentik-secrets
-          key: AUTHENTIK_BOOTSTRAP_TOKEN
+  enabled: false  # We'll use external secret with envFrom
 
+server:
+  envFrom:
+  - secretRef:
+      name: authentik
   ingress:
     enabled: true
     ingressClassName: traefik
@@ -59,37 +37,9 @@ server:
       memory: 1Gi
 
 worker:
-  # Environment variables from sealed secret  
-  env:
-    - name: AUTHENTIK_SECRET_KEY
-      valueFrom:
-        secretKeyRef:
-          name: authentik-secrets
-          key: AUTHENTIK_SECRET_KEY
-    - name: AUTHENTIK_POSTGRESQL__PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: authentik-secrets
-          key: POSTGRES_PASSWORD
-    - name: AUTHENTIK_BOOTSTRAP_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: authentik-secrets
-          key: AUTHENTIK_BOOTSTRAP_PASSWORD
-    - name: AUTHENTIK_BOOTSTRAP_TOKEN
-      valueFrom:
-        secretKeyRef:
-          name: authentik-secrets
-          key: AUTHENTIK_BOOTSTRAP_TOKEN
-
-  # Resources for authentik worker
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 300m
-      memory: 512Mi
+  envFrom:
+  - secretRef:
+      name: authentik
 
 # PostgreSQL configuration
 postgresql:
@@ -97,35 +47,23 @@ postgresql:
   auth:
     username: authentik
     database: authentik
-    existingSecret: authentik-secrets
+    existingSecret: authentik
     secretKeys:
-      adminPasswordKey: postgres-password
-      userPasswordKey: postgres-password
+      adminPasswordKey: postgresql-password
+      userPasswordKey: postgresql-password
+      replicationPasswordKey: postgresql-replication-password
   primary:
     persistence:
       enabled: true
       size: 8Gi
-    resources:
-      requests:
-        cpu: 100m
-        memory: 256Mi
-      limits:
-        cpu: 300m
-        memory: 512Mi
 
-# Redis configuration
 redis:
   enabled: true
   auth:
-    enabled: false
-  master:
+    enabled: true
+    existingSecret: authentik
+    existingSecretPasswordKey: redis-password
+  primary:
     persistence:
       enabled: true
-      size: 1Gi
-    resources:
-      requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
+      size: 8Gi
