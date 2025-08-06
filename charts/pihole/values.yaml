@@ -1,0 +1,167 @@
+# Pi-hole DNS Sinkhole Configuration
+# Includes dnscrypt-proxy sidecar for secure upstream DNS
+
+# Global settings
+replicaCount: 1
+timezone: "Asia/Dubai"
+
+# Pi-hole image (latest 2025 version)
+image:
+  repository: pihole/pihole
+  tag: "2025.07.1"
+  pullPolicy: IfNotPresent
+
+# Admin interface configuration
+admin:
+  enabled: true
+  # Password will be set via existing secret
+  existingSecret: pihole-web-password
+  passwordKey: password
+
+# DNS Service configuration (MetalLB LoadBalancer)
+serviceDns:
+  type: LoadBalancer
+  loadBalancerIP: "10.2.0.53"
+  port: 53
+  annotations:
+    metallb.io/address-pool: "default"
+  externalTrafficPolicy: Local
+
+# Web UI Service configuration
+serviceWeb:
+  type: ClusterIP
+  port: 80
+
+# Ingress configuration (updated domain without v2)
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  hosts:
+    - host: pihole.cubancodelab.net
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: pihole-tls
+      hosts:
+        - pihole.cubancodelab.net
+
+# Pi-hole DNS configuration
+dns:
+  # Use dnscrypt-proxy sidecar
+  upstream1: "127.0.0.1#5053"
+  upstream2: "127.0.0.1#5053"
+  # Enable DNSSEC validation
+  dnssec: true
+  # Conditional forwarding (optional)
+  conditionalForwarding:
+    enabled: false
+    domain: ""
+    target: ""
+
+# dnscrypt-proxy sidecar configuration (latest 2025 version)
+dnscryptProxy:
+  enabled: true
+  image:
+    repository: ghcr.io/klutchell/dnscrypt-proxy
+    tag: latest  # Based on 2.1.12 with 2025 build
+    pullPolicy: IfNotPresent
+  config:
+    # Listen on localhost:5053
+    listenAddresses: ['127.0.0.1:5053']
+    # Use Cloudflare DNS over HTTPS
+    serverNames: ['cloudflare']
+    # Security requirements
+    requireDnssec: true
+    requireNolog: true
+    requireNofilter: true
+    # Static server configuration
+    servers:
+      cloudflare:
+        stamp: 'sdns://AgcAAAAAAAAABzEuMS4xLjEAEmNsb3VkZmxhcmUtZG5zLmNvbQovZG5zLXF1ZXJ5'
+
+# Persistent storage
+persistence:
+  enabled: true
+  storageClass: "local-path"
+  accessMode: ReadWriteOnce
+  size: 1Gi
+  # Specific paths
+  config:
+    mountPath: "/etc/pihole"
+  dnsmasq:
+    mountPath: "/etc/dnsmasq.d"
+
+# Pod configuration
+podSecurityContext:
+  fsGroup: 999
+
+securityContext:
+  capabilities:
+    add:
+      - NET_ADMIN
+  runAsUser: 999
+  runAsGroup: 999
+
+# Resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Node selection
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Anti-affinity for HA
+podAntiAffinity:
+  enabled: true
+  type: soft # or hard
+
+# Additional environment variables
+extraEnvVars:
+  - name: TZ
+    value: "Asia/Dubai"
+  - name: WEBPASSWORD_FILE
+    value: "/run/secrets/pihole-password/password"
+  - name: DNSSEC
+    value: "true"
+  - name: REV_SERVER
+    value: "false"
+
+# Service monitor for Prometheus (integrate with monitoring stack)
+serviceMonitor:
+  enabled: true
+  interval: 30s
+  path: /admin/api.php
+  labels:
+    app.kubernetes.io/part-of: observability-stack
+
+# Health checks
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  httpGet:
+    path: /admin/
+    port: http
+
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 30
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+  httpGet:
+    path: /admin/
+    port: http

@@ -125,47 +125,47 @@ ingress:
   # TLS configuration
   tls:
     - hosts:
-        - jellyfin.v2.cubancodelab.net
-        - radarr.v2.cubancodelab.net
-        - sonarr.v2.cubancodelab.net
-        - requests.v2.cubancodelab.net
-        - prowlarr.v2.cubancodelab.net
-        - qbittorrent.v2.cubancodelab.net
+        - jellyfin.cubancodelab.net
+        - radarr.cubancodelab.net
+        - sonarr.cubancodelab.net
+        - requests.cubancodelab.net
+        - prowlarr.cubancodelab.net
+        - qbittorrent.cubancodelab.net
       secretName: media-stack-tls
   
   # Individual service ingress configuration
   jellyfin:
     enabled: true
-    host: jellyfin.v2.cubancodelab.net
+    host: jellyfin.cubancodelab.net
     path: /
     pathType: Prefix
   
   radarr:
     enabled: true
-    host: radarr.v2.cubancodelab.net
+    host: radarr.cubancodelab.net
     path: /
     pathType: Prefix
   
   sonarr:
     enabled: true
-    host: sonarr.v2.cubancodelab.net
+    host: sonarr.cubancodelab.net
     path: /
     pathType: Prefix
   
   jellyseerr:
     enabled: true
-    host: requests.v2.cubancodelab.net
+    host: requests.cubancodelab.net
     path: /
     pathType: Prefix
   
   prowlarr:
     enabled: true
-    host: prowlarr.v2.cubancodelab.net
+    host: prowlarr.cubancodelab.net
     path: /
     pathType: Prefix
   
   qbittorrent:
     enabled: true
-    host: qbittorrent.v2.cubancodelab.net
+    host: qbittorrent.cubancodelab.net
     path: /
     pathType: Prefix

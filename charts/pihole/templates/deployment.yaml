@@ -1,0 +1,181 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pihole.fullname" . }}
+  labels:
+    {{- include "pihole.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "pihole.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+      labels:
+        {{- include "pihole.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        # Main Pi-hole container
+        - name: pihole
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+            - name: dns-tcp
+              containerPort: 53
+              protocol: TCP
+            - name: dns-udp
+              containerPort: 53
+              protocol: UDP
+          env:
+            - name: TZ
+              value: {{ .Values.timezone | quote }}
+            - name: DNSSEC
+              value: {{ .Values.dns.dnssec | quote }}
+            - name: DNS1
+              value: {{ .Values.dns.upstream1 | quote }}
+            - name: DNS2
+              value: {{ .Values.dns.upstream2 | quote }}
+            {{- if .Values.admin.enabled }}
+            - name: WEBPASSWORD_FILE
+              value: "/run/secrets/pihole-password/{{ .Values.admin.passwordKey }}"
+            {{- end }}
+            {{- if .Values.dns.conditionalForwarding.enabled }}
+            - name: REV_SERVER
+              value: "true"
+            - name: REV_SERVER_DOMAIN
+              value: {{ .Values.dns.conditionalForwarding.domain | quote }}
+            - name: REV_SERVER_TARGET
+              value: {{ .Values.dns.conditionalForwarding.target | quote }}
+            {{- end }}
+            {{- range .Values.extraEnvVars }}
+            - name: {{ .name }}
+              value: {{ .value | quote }}
+            {{- end }}
+          {{- if .Values.livenessProbe.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.livenessProbe.httpGet.path }}
+              port: {{ .Values.livenessProbe.httpGet.port }}
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.livenessProbe.failureThreshold }}
+          {{- end }}
+          {{- if .Values.readinessProbe.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.readinessProbe.httpGet.path }}
+              port: {{ .Values.readinessProbe.httpGet.port }}
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.readinessProbe.failureThreshold }}
+          {{- end }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            {{- if .Values.persistence.enabled }}
+            - name: pihole-config
+              mountPath: {{ .Values.persistence.config.mountPath }}
+            - name: pihole-dnsmasq
+              mountPath: {{ .Values.persistence.dnsmasq.mountPath }}
+            {{- end }}
+            {{- if .Values.admin.enabled }}
+            - name: pihole-password
+              mountPath: /run/secrets/pihole-password
+              readOnly: true
+            {{- end }}
+
+        # dnscrypt-proxy sidecar container
+        {{- if .Values.dnscryptProxy.enabled }}
+        - name: dnscrypt-proxy
+          image: "{{ .Values.dnscryptProxy.image.repository }}:{{ .Values.dnscryptProxy.image.tag }}"
+          imagePullPolicy: {{ .Values.dnscryptProxy.image.pullPolicy }}
+          args:
+            - "-config"
+            - "/config/dnscrypt-proxy.toml"
+          ports:
+            - name: dnscrypt
+              containerPort: 5053
+              protocol: TCP
+            - name: dnscrypt-udp
+              containerPort: 5053
+              protocol: UDP
+          volumeMounts:
+            - name: dnscrypt-config
+              mountPath: /config
+              readOnly: true
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            runAsNonRoot: true
+            runAsUser: 65534
+            readOnlyRootFilesystem: true
+        {{- end }}
+
+      volumes:
+        {{- if .Values.persistence.enabled }}
+        - name: pihole-config
+          persistentVolumeClaim:
+            claimName: {{ include "pihole.fullname" . }}-config
+        - name: pihole-dnsmasq
+          persistentVolumeClaim:
+            claimName: {{ include "pihole.fullname" . }}-dnsmasq
+        {{- end }}
+        {{- if .Values.admin.enabled }}
+        - name: pihole-password
+          secret:
+            secretName: {{ .Values.admin.existingSecret }}
+            defaultMode: 0400
+        {{- end }}
+        {{- if .Values.dnscryptProxy.enabled }}
+        - name: dnscrypt-config
+          configMap:
+            name: {{ include "pihole.dnscryptConfigName" . }}
+        {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if .Values.podAntiAffinity.enabled }}
+      affinity:
+        podAntiAffinity:
+          {{- if eq .Values.podAntiAffinity.type "hard" }}
+          requiredDuringSchedulingIgnoredDuringExecution:
+          {{- else }}
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+          {{- end }}
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/name
+                  operator: In
+                  values:
+                  - {{ include "pihole.name" . }}
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

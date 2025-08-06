@@ -1,0 +1,16 @@
+apiVersion: v2
+name: pihole
+description: Pi-hole DNS sinkhole with dnscrypt-proxy sidecar for secure DNS
+type: application
+version: 1.0.0
+appVersion: "2024.07.0"
+keywords:
+  - dns
+  - pihole
+  - ad-blocking
+  - dnscrypt
+home: https://pi-hole.net/
+sources:
+  - https://github.com/pi-hole/pi-hole
+maintainers:
+  - name: homelab-admin

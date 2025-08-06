@@ -71,8 +71,8 @@ grafana:
   # Grafana configuration
   grafana.ini:
     server:
-      domain: monitoring.v2.cubancodelab.net
-      root_url: "https://monitoring.v2.cubancodelab.net"
+      domain: monitoring.cubancodelab.net
+      root_url: "https://monitoring.cubancodelab.net"
       serve_from_sub_path: false
     
     # Security configuration
@@ -95,11 +95,11 @@ grafana:
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
       traefik.ingress.kubernetes.io/router.tls: "true"
     hosts:
-      - monitoring.v2.cubancodelab.net
+      - monitoring.cubancodelab.net
     tls:
       - secretName: grafana-tls
         hosts:
-          - monitoring.v2.cubancodelab.net
+          - monitoring.cubancodelab.net
   
   # Persistence for dashboards and config
   persistence:
@@ -189,11 +189,11 @@ alertmanager:
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
       traefik.ingress.kubernetes.io/router.tls: "true"
     hosts:
-      - alertmanager.v2.cubancodelab.net
+      - alertmanager.cubancodelab.net
     tls:
       - secretName: alertmanager-tls
         hosts:
-          - alertmanager.v2.cubancodelab.net
+          - alertmanager.cubancodelab.net
   
   # Configuration will be added via ConfigMap
   config:
