@@ -128,12 +128,6 @@ podAntiAffinity:
 
 # Additional environment variables
 extraEnvVars:
-  - name: TZ
-    value: "Asia/Dubai"
-  - name: WEBPASSWORD_FILE
-    value: "/run/secrets/pihole-password/password"
-  - name: DNSSEC
-    value: "true"
   - name: REV_SERVER
     value: "false"
 
