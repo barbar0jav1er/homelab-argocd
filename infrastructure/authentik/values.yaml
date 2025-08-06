@@ -18,14 +18,14 @@ server:
       traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
       traefik.ingress.kubernetes.io/router.tls: "true"
     hosts:
-      - auth.v2.cubancodelab.net
+      - auth.cubancodelab.net
     paths:
       - /
     pathType: Prefix
     tls:
       - secretName: authentik-tls
         hosts:
-          - auth.v2.cubancodelab.net
+          - auth.cubancodelab.net
 
   # Resources for authentik server
   resources:

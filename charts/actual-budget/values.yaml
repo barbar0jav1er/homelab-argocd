@@ -51,7 +51,7 @@ ingress:
     traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
     traefik.ingress.kubernetes.io/router.tls: "true"
   
-  host: actual.v2.cubancodelab.net
+  host: actual.cubancodelab.net
   path: /
   pathType: Prefix
   

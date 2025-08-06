@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "pihole.fullname" . }}-web
+  labels:
+    {{- include "pihole.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  type: {{ .Values.serviceWeb.type }}
+  ports:
+    - port: {{ .Values.serviceWeb.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "pihole.selectorLabels" . | nindent 4 }}

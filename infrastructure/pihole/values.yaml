@@ -1,0 +1,52 @@
+# Pi-hole Configuration Override
+# Custom values for the homelab Pi-hole deployment
+
+# Update timezone if needed
+timezone: "Asia/Dubai"
+
+# Admin interface - use existing sealed secret from old config
+admin:
+  enabled: true
+  existingSecret: pihole-web-password
+  passwordKey: password
+
+# DNS Service - MetalLB configuration
+serviceDns:
+  type: LoadBalancer
+  loadBalancerIP: "10.2.0.53"
+  annotations:
+    metallb.io/address-pool: "default"
+  externalTrafficPolicy: Local
+
+# Ingress - updated domain without v2
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  hosts:
+    - host: pihole.cubancodelab.net
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: pihole-tls
+      hosts:
+        - pihole.cubancodelab.net
+
+# Enable monitoring integration
+serviceMonitor:
+  enabled: true
+  labels:
+    app.kubernetes.io/part-of: observability-stack
+
+# Resource limits for homelab
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
