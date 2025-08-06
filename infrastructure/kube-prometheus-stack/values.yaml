@@ -1,0 +1,307 @@
+# Kube-Prometheus-Stack Configuration
+# Provides Prometheus, Grafana, and Alertmanager for comprehensive monitoring
+
+global:
+  # Image registry configuration
+  imageRegistry: ""
+  # Common labels
+  commonLabels:
+    app.kubernetes.io/part-of: observability-stack
+
+# Prometheus Configuration
+prometheus:
+  enabled: true
+  prometheusSpec:
+    # Retention and storage
+    retention: 30d
+    retentionSize: 50GiB
+    
+    # Storage configuration
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path  # Adjust based on your storage class
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 50Gi
+    
+    # Resource limits
+    resources:
+      limits:
+        cpu: 2000m
+        memory: 8Gi
+      requests:
+        cpu: 1000m
+        memory: 4Gi
+    
+    # Security context
+    securityContext:
+      fsGroup: 2000
+      runAsUser: 1000
+      runAsNonRoot: true
+    
+    # Service monitor configuration
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    
+    # Additional scrape configs for custom targets
+    additionalScrapeConfigs: []
+    
+    # Enable feature gates
+    enableFeatures: []
+
+# Grafana Configuration
+grafana:
+  enabled: true
+  
+  # Admin credentials - will be stored in sealed secret
+  admin:
+    existingSecret: "grafana-admin-secret"
+    userKey: admin-user
+    passwordKey: admin-password
+  
+  # Grafana configuration
+  grafana.ini:
+    server:
+      domain: monitoring.v2.cubancodelab.net
+      root_url: "https://monitoring.v2.cubancodelab.net"
+      serve_from_sub_path: false
+    
+    # Security configuration
+    security:
+      allow_embedding: false
+      cookie_secure: true
+      cookie_samesite: lax
+    
+    # Authentication via Authentik OIDC
+    auth:
+      disable_login_form: false
+      oauth_auto_login: false
+    
+    auth.generic_oauth:
+      enabled: true
+      name: Authentik
+      client_id: grafana
+      client_secret: $__file{/etc/secrets/auth_generic_oauth/client_secret}
+      scopes: openid profile email groups
+      auth_url: https://auth.v2.cubancodelab.net/application/o/authorize/
+      token_url: https://auth.v2.cubancodelab.net/application/o/token/
+      api_url: https://auth.v2.cubancodelab.net/application/o/userinfo/
+      allow_sign_up: true
+      auto_login: false
+      role_attribute_path: contains(groups[*], 'homelab-admins') && 'Admin' || contains(groups[*], 'homelab-editors') && 'Editor' || 'Viewer'
+  
+  # Ingress configuration
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+    hosts:
+      - monitoring.v2.cubancodelab.net
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - monitoring.v2.cubancodelab.net
+  
+  # Persistence for dashboards and config
+  persistence:
+    type: pvc
+    enabled: true
+    storageClassName: local-path
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+  
+  # Resource limits
+  resources:
+    limits:
+      cpu: 500m
+      memory: 1Gi
+    requests:
+      cpu: 250m
+      memory: 512Mi
+  
+  # Security context
+  securityContext:
+    fsGroup: 472
+    runAsGroup: 472
+    runAsUser: 472
+  
+  # Sidecar configuration for automatic dashboard loading
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      folder: /tmp/dashboards
+      defaultFolderName: "General"
+      searchNamespace: ALL
+    
+    datasources:
+      enabled: true
+      label: grafana_datasource
+      labelValue: "1"
+      searchNamespace: ALL
+  
+  # Extra secret mounts for OAuth
+  extraSecretMounts:
+    - name: auth-generic-oauth-secret-mount
+      secretName: grafana-oauth-secret
+      defaultMode: 0440
+      mountPath: /etc/secrets/auth_generic_oauth
+      readOnly: true
+  
+  # Default dashboards
+  defaultDashboardsEnabled: true
+  defaultDashboardsTimezone: America/New_York
+
+# Alertmanager Configuration  
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    # Storage configuration
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 5Gi
+    
+    # Resource limits
+    resources:
+      limits:
+        cpu: 200m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+    
+    # Security context
+    securityContext:
+      fsGroup: 2000
+      runAsUser: 1000
+      runAsNonRoot: true
+    
+    # Retention
+    retention: 240h
+  
+  # Ingress for Alertmanager
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      traefik.ingress.kubernetes.io/router.tls: "true"
+    hosts:
+      - alertmanager.v2.cubancodelab.net
+    tls:
+      - secretName: alertmanager-tls
+        hosts:
+          - alertmanager.v2.cubancodelab.net
+  
+  # Configuration will be added via ConfigMap
+  config:
+    global:
+      smtp_smarthost: 'localhost:587'
+      smtp_from: 'alertmanager@v2.cubancodelab.net'
+    
+    route:
+      group_by: ['alertname', 'severity']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: 'null'
+      routes:
+        - match:
+            alertname: Watchdog
+          receiver: 'null'
+    
+    receivers:
+      - name: 'null'
+
+# Node Exporter Configuration
+nodeExporter:
+  enabled: true
+
+# Kube State Metrics Configuration  
+kubeStateMetrics:
+  enabled: true
+
+# Prometheus Operator Configuration
+prometheusOperator:
+  enabled: true
+  
+  # Resource limits
+  resources:
+    limits:
+      cpu: 200m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  
+  # Security context
+  securityContext:
+    fsGroup: 65534
+    runAsUser: 65534
+    runAsNonRoot: true
+
+# Default rules configuration
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: true  
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeScheduler: true
+    kubeStateMetrics: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
+
+# Service Monitor configurations for existing services
+additionalServiceMonitors:
+  # Traefik monitoring
+  - name: traefik
+    selector:
+      matchLabels:
+        app.kubernetes.io/name: traefik
+    endpoints:
+      - port: traefik
+        path: /metrics
+  
+  # ArgoCD monitoring  
+  - name: argocd-metrics
+    selector:
+      matchLabels:
+        app.kubernetes.io/part-of: argocd
+    endpoints:
+      - port: metrics
+
+# Clean up configuration
+cleanupCRDs: false
