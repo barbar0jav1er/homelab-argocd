@@ -56,6 +56,12 @@ prometheus:
 grafana:
   enabled: true
   
+  # Image configuration  
+  image:
+    repository: grafana/grafana
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
   # Admin credentials - will be stored in sealed secret
   admin:
     existingSecret: "grafana-admin-secret"
@@ -75,23 +81,10 @@ grafana:
       cookie_secure: true
       cookie_samesite: lax
     
-    # Authentication via Authentik OIDC
+    # Authentication - OAuth disabled for initial setup
     auth:
       disable_login_form: false
       oauth_auto_login: false
-    
-    auth.generic_oauth:
-      enabled: true
-      name: Authentik
-      client_id: grafana
-      client_secret: $__file{/etc/secrets/auth_generic_oauth/client_secret}
-      scopes: openid profile email groups
-      auth_url: https://auth.v2.cubancodelab.net/application/o/authorize/
-      token_url: https://auth.v2.cubancodelab.net/application/o/token/
-      api_url: https://auth.v2.cubancodelab.net/application/o/userinfo/
-      allow_sign_up: true
-      auto_login: false
-      role_attribute_path: contains(groups[*], 'homelab-admins') && 'Admin' || contains(groups[*], 'homelab-editors') && 'Editor' || 'Viewer'
   
   # Ingress configuration
   ingress:
@@ -148,13 +141,8 @@ grafana:
       labelValue: "1"
       searchNamespace: ALL
   
-  # Extra secret mounts for OAuth
-  extraSecretMounts:
-    - name: auth-generic-oauth-secret-mount
-      secretName: grafana-oauth-secret
-      defaultMode: 0440
-      mountPath: /etc/secrets/auth_generic_oauth
-      readOnly: true
+  # Extra secret mounts - OAuth disabled for initial setup
+  extraSecretMounts: []
   
   # Default dashboards
   defaultDashboardsEnabled: true
