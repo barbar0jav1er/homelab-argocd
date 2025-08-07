@@ -1,0 +1,49 @@
+🎉 Pi-hole has been installed successfully!
+
+📊 Release Information:
+   Name: {{ .Release.Name }}
+   Namespace: {{ .Release.Namespace }}
+
+{{- if .Values.ingress.enabled }}
+🌐 Web Interface:
+   URL: {{ if .Values.ingress.tls.enabled }}https{{ else }}http{{ end }}://{{ .Values.ingress.host }}
+   Path: /admin
+{{- else }}
+🌐 Web Interface:
+   To access the web interface, you need to enable ingress or port-forward:
+   kubectl port-forward service/{{ include "pihole.fullname" . }}-web 8080:80
+   Then visit: http://localhost:8080/admin
+{{- end }}
+
+🔑 Admin Credentials:
+{{- if .Values.password.create }}
+   Password: {{ .Values.password.value | quote }}
+{{- else }}
+   Password: (stored in secret {{ .Values.password.existingSecret }})
+{{- end }}
+
+{{- if .Values.services.dns.enabled }}
+📡 DNS Server:
+{{- if eq .Values.services.dns.type "LoadBalancer" }}
+   Get the external IP with:
+   kubectl get service {{ include "pihole.fullname" . }}-dns
+   
+   Then configure your devices/router to use that IP as DNS server.
+{{- else if eq .Values.services.dns.type "NodePort" }}
+   DNS available on NodePort. Get the port with:
+   kubectl get service {{ include "pihole.fullname" . }}-dns
+{{- else }}
+   DNS service is ClusterIP. Consider changing to LoadBalancer for external access.
+{{- end }}
+{{- end }}
+
+📋 Next Steps:
+1. Access the web interface using the URL above
+2. Login with the admin password
+3. Configure blocklists in Settings > Blocklists  
+4. Set Pi-hole as your DNS server
+
+🔍 Troubleshooting:
+   View pods:     kubectl get pods -l app.kubernetes.io/name={{ include "pihole.name" . }}
+   View services: kubectl get services -l app.kubernetes.io/name={{ include "pihole.name" . }}
+   View logs:     kubectl logs -l app.kubernetes.io/name={{ include "pihole.name" . }}

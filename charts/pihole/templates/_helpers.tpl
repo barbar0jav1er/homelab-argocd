@@ -1,50 +1,37 @@
 {{/*
-Expand the name of the chart.
+App name
 */}}
 {{- define "pihole.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
-Create a default fully qualified app name.
-We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
-If release name contains chart name it will be used as a full name.
+Resources full name
 */}}
 {{- define "pihole.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
-{{- $name := default .Chart.Name .Values.nameOverride }}
-{{- if contains $name .Release.Name }}
-{{- .Release.Name | trunc 63 | trimSuffix "-" }}
-{{- else }}
-{{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" }}
-{{- end }}
+{{- printf "%s-%s" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" }}
 {{- end }}
 {{- end }}
 
 {{/*
-Create chart name and version as used by the chart label.
-*/}}
-{{- define "pihole.chart" -}}
-{{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
-{{- end }}
-
-{{/*
-Common labels
+Commons Label for all resources
 */}}
 {{- define "pihole.labels" -}}
-helm.sh/chart: {{ include "pihole.chart" . }}
-{{ include "pihole.selectorLabels" . }}
-{{- if .Chart.AppVersion }}
+helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+app.kubernetes.io/name: {{ include "pihole.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-app.kubernetes.io/part-of: infrastructure-stack
+{{- with .Values.commonLabels }}
+{{ toYaml . }}
+{{- end }}
 {{- end }}
 
 {{/*
-Selector labels
+Selector Labels for pods
 */}}
 {{- define "pihole.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "pihole.name" . }}
@@ -52,7 +39,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
-Create the name of the service account to use
+Name for the service account
 */}}
 {{- define "pihole.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
@@ -62,26 +49,18 @@ Create the name of the service account to use
 {{- end }}
 {{- end }}
 
-{{/*
-Create the dnscrypt-proxy config name
-*/}}
-{{- define "pihole.dnscryptConfigName" -}}
-{{- printf "%s-dnscrypt-config" (include "pihole.fullname" .) }}
-{{- end }}
+{{- define "pihole.secretName" -}}
+{{- if .Values.password.create -}}
+{{- printf "%s-secret" (include "pihole.fullname" .) -}}
+{{- else -}}
+{{- .Values.password.existingSecret -}}
+{{- end -}}
+{{- end -}}
 
-{{/*
-Generate dnscrypt-proxy configuration
-*/}}
-{{- define "pihole.dnscryptConfig" -}}
-listen_addresses = {{ .Values.dnscryptProxy.config.listenAddresses | toJson }}
-server_names = {{ .Values.dnscryptProxy.config.serverNames | toJson }}
-require_dnssec = {{ .Values.dnscryptProxy.config.requireDnssec }}
-require_nolog = {{ .Values.dnscryptProxy.config.requireNolog }}
-require_nofilter = {{ .Values.dnscryptProxy.config.requireNofilter }}
-
-[static]
-{{- range $name, $config := .Values.dnscryptProxy.config.servers }}
-[static.{{ $name | quote }}]
-stamp = {{ $config.stamp | quote }}
-{{- end }}
-{{- end }}
+{{- define "pihole.secretKey" -}}
+{{- if .Values.password.create -}}
+admin-password
+{{- else -}}
+{{- .Values.password.existingSecretKey -}}
+{{- end -}}
+{{- end -}}

@@ -1,16 +1,10 @@
 apiVersion: v2
 name: pihole
-description: Pi-hole DNS sinkhole with dnscrypt-proxy sidecar for secure DNS
+description: Pi-hole DNS ad-blocker chart
 type: application
-version: 1.0.0
-appVersion: "2024.07.0"
-keywords:
-  - dns
-  - pihole
-  - ad-blocking
-  - dnscrypt
-home: https://pi-hole.net/
-sources:
-  - https://github.com/pi-hole/pi-hole
+version: 0.1.0
+appVersion: "2025.08.0"
+
 maintainers:
-  - name: homelab-admin
+  - name: Barbaro Javier
+    email: barbar0jav1er@callbackhell.run
