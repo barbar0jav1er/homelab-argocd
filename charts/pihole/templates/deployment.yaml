@@ -42,6 +42,10 @@ spec:
               key: {{ include "pihole.secretKey" . }}
         - name: FTLCONF_dns_upstreams
           value: {{ .Values.config.dnsUpstreams | quote }}
+        - name: FTLCONF_dns_listeningMode
+          value: "all"
+        - name: DNSMASQ_LISTENING
+          value: "all"
 
         {{- if .Values.resources }}
         resources:
