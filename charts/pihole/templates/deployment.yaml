@@ -27,7 +27,7 @@ spec:
           name: dns-tcp
           protocol: TCP
         - containerPort: 53
-          name: dns-upd
+          name: dns-udp
           protocol: UDP
         - containerPort: 80
           name: web
@@ -60,7 +60,21 @@ spec:
         {{- end }}
         {{- end }}
       
-      {{- if or .Values.persistence.config.enabled .Values.persistence.dnsmasq.enabled }}
+       {{- if .Values.sidecar.dnscrypt.enabled }}
+      - name: dnscrypt-proxy
+        image: {{ .Values.sidecar.dnscrypt.image.repository }}:{{ .Values.sidecar.dnscrypt.image.tag }}
+        ports:
+        - containerPort: {{ .Values.sidecar.dnscrypt.port }}
+          name: dnscrypt
+        volumeMounts:
+        - name: dnscrypt-config
+          mountPath: /etc/dnscrypt-proxy
+        {{- if .Values.sidecar.dnscrypt.resources }}
+        resources:
+          {{- toYaml .Values.sidecar.dnscrypt.resources | nindent 10 }}
+        {{- end }}
+      {{- end }}
+
       volumes:
       {{- if .Values.persistence.config.enabled }}
       - name: config
@@ -72,6 +86,11 @@ spec:
         persistentVolumeClaim:
           claimName: {{ include "pihole.fullname" . }}-dnsmasq
       {{- end }}
+      {{- if .Values.sidecar.dnscrypt.enabled }}
+      - name: dnscrypt-config
+        configMap:
+          name: {{ include "pihole.fullname" . }}-dnscrypt-config
       {{- end }}
+
 
       

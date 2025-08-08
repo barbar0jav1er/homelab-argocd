@@ -1,0 +1,38 @@
+{{- if .Values.sidecar.dnscrypt.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "pihole.fullname" . }}-dnscrypt-config
+  labels:
+    {{- include "pihole.labels" . | nindent 4 }}
+data:
+  dnscrypt-proxy.toml: |
+    listen_addresses = ['127.0.0.1:{{ .Values.sidecar.dnscrypt.port }}']
+    max_clients = 250
+    
+    # DNS Servers
+    server_names = {{ .Values.sidecar.dnscrypt.config.server_names | toJson }}
+    
+    # Caching
+    cache = {{ .Values.sidecar.dnscrypt.config.cache }}
+    cache_size = {{ .Values.sidecar.dnscrypt.config.cache_size }}
+    cache_neg_min_ttl = 60
+    cache_neg_max_ttl = 600
+    
+    # Security
+    require_dnssec = false
+    require_nolog = true
+    require_nofilter = true
+    
+    # Performance
+    timeout = 5000
+    keepalive = 30
+    
+    # Sources
+    [sources]
+      [sources.'public-resolvers']
+      urls = ['https://raw.githubusercontent.com/DNSCrypt/dnscrypt-resolvers/master/v3/public-resolvers.md', 'https://download.dnscrypt.info/resolvers-list/v3/public-resolvers.md']
+      cache_file = '/tmp/public-resolvers.md'
+      minisign_key = 'RWQf6LRCGA9i53mlYecO4IzT51TGPpvWucNSCh1CBM0QTaLn73Y7GFO3'
+      refresh_delay = 72
+{{- end }}

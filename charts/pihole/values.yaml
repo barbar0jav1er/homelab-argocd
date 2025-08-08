@@ -27,9 +27,29 @@ password:
   existingSecret: ""
   existingSecretKey: "admin-password"
 
+sidecar:
+  dnscrypt:
+    enabled: true                        
+    image: 
+      repository: klutchell/dnscrypt-proxy
+      tag: "latest"
+    port: 5053
+    config:
+      server_names: ['cloudflare', 'quad9']
+      listen_addresses: ['127.0.0.1:5053']
+      cache: true
+      cache_size: 4096
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
 config:
   timezone: "Europe/Madrid"
-  dnsUpstreams: "8.8.8.8;8.8.4.4;1.1.1.1"
+  dnsUpstreams: "127.0.0.1#5053"
 
 services:
   dns:
