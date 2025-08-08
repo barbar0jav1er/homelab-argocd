@@ -43,9 +43,7 @@ spec:
         - name: FTLCONF_dns_upstreams
           value: {{ .Values.config.dnsUpstreams | quote }}
         - name: FTLCONF_dns_listeningMode
-          value: "all"
-        - name: DNSMASQ_LISTENING
-          value: "all"
+          value: {{ .Values.config.dnsListeningMode | quote }}
 
         {{- if .Values.resources }}
         resources:

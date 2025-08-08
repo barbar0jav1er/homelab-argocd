@@ -50,6 +50,7 @@ sidecar:
 config:
   timezone: "Europe/Madrid"
   dnsUpstreams: "127.0.0.1#5053"
+  dnsListeningMode: "all"
 
 services:
   dns:
