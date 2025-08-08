@@ -1,0 +1,92 @@
+image:
+  repository: pihole/pihole
+  tag: "2025.08.0"
+
+nameOverride: ""        
+fullnameOverride: ""
+commonLabels: {}
+podLabels: {}
+
+resources:  
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
+
+password:
+  create: true
+  value: "changeme123"
+  existingSecret: ""
+  existingSecretKey: "admin-password"
+
+sidecar:
+  dnscrypt:
+    enabled: true                        
+    image: 
+      repository: klutchell/dnscrypt-proxy
+      tag: "latest"
+    port: 5053
+    config:
+      server_names: ['cloudflare', 'quad9']
+      listen_addresses: ['127.0.0.1:5053']
+      cache: true
+      cache_size: 4096
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+config:
+  timezone: "Europe/Madrid"
+  dnsUpstreams: "127.0.0.1#5053"
+
+services:
+  dns:
+    enabled: true
+    type: LoadBalancer
+    loadBalancerIP: ""
+  
+  web:
+    enabled: true
+    type: ClusterIP
+    port: 80
+
+ingress:
+  enabled: true 
+  className: "traefik" 
+  host: "pihole.local" 
+  tls:
+    enabled: true
+    secretName: "pihole-tls"
+  annotations: {}
+
+persistence:
+  config:
+    enabled: true
+    storageClass: ""
+    size: "1Gi"
+    accessModes:
+      - ReadWriteOnce
+    selector: {}
+    annotations: {}
+  
+  dnsmasq:
+    enabled: true
+    storageClass: ""
+    size: "500Mi"
+    accessModes:
+      - ReadWriteOnce
+    selector: {}
+    annotations: {}
+  

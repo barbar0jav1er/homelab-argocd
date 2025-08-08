@@ -1,0 +1,58 @@
+{{- if .Values.persistence.config.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "pihole.fullname" . }}-config
+  {{- if .Values.persistence.config.annotations }}
+  labels:
+    {{- include "pihole.labels" . | nindent 4 }}
+  annotations:
+    {{- range $key, $value := .Values.persistence.config.annotations }}
+    {{ $key | quote }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- range .Values.persistence.config.accessModes }}
+    - {{ . }}
+    {{- end }}
+  {{- if .Values.persistence.config.storageClass }}
+  storageClassName: {{ .Values.persistence.config.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.config.size }}
+  {{- if .Values.persistence.config.selector }}
+  selector:
+    {{- toYaml .Values.persistence.config.selector | nindent 4 }}
+  {{- end }}
+{{- end }}
+
+{{- if .Values.persistence.dnsmasq.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "pihole.fullname" . }}-dnsmasq
+  {{- if .Values.persistence.dnsmasq.annotations }}
+  annotations:
+    {{- range $key, $value := .Values.persistence.dnsmasq.annotations }}
+    {{ $key | quote }}: {{ $value | quote }}
+    {{- end }}
+  {{- end }}
+spec:
+  accessModes:
+    {{- range .Values.persistence.dnsmasq.accessModes }}
+    - {{ . }}
+    {{- end }}
+  {{- if .Values.persistence.config.storageClass }}
+  storageClassName: {{ .Values.persistence.dnsmasq.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.dnsmasq.size }}
+  {{- if .Values.persistence.dnsmasq.selector }}
+  selector:
+    {{- toYaml .Values.persistence.dnsmasq.selector | nindent 4 }}
+  {{- end }}
+{{- end }}
