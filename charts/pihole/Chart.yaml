@@ -1,0 +1,10 @@
+apiVersion: v2
+name: pihole
+description: Pi-hole DNS ad-blocker chart
+type: application
+version: 0.1.0
+appVersion: "2025.08.0"
+
+maintainers:
+  - name: Barbaro Javier
+    email: barbar0jav1er@callbackhell.run

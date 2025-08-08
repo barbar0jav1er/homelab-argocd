@@ -1,0 +1,96 @@
+# templates/deployment.yaml - Versión 1
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "pihole.fullname" . }}
+  labels:
+    {{- include "pihole.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "pihole.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "pihole.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "pihole.serviceAccountName" . }}
+      containers:
+      - name: pihole
+        image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        ports:
+        - containerPort: 53
+          name: dns-tcp
+          protocol: TCP
+        - containerPort: 53
+          name: dns-udp
+          protocol: UDP
+        - containerPort: 80
+          name: web
+          protocol: TCP
+        env:
+        - name: TZ
+          value: {{ .Values.config.timezone | quote }}
+        - name: FTLCONF_webserver_api_password
+          valueFrom:
+            secretKeyRef: 
+              name: {{ include "pihole.secretName" . }}
+              key: {{ include "pihole.secretKey" . }}
+        - name: FTLCONF_dns_upstreams
+          value: {{ .Values.config.dnsUpstreams | quote }}
+
+        {{- if .Values.resources }}
+        resources:
+          {{- toYaml .Values.resources | nindent 10 }}
+        {{- end }}
+        
+        {{- if or .Values.persistence.config.enabled .Values.persistence.dnsmasq.enabled }}
+        volumeMounts:
+        {{- if .Values.persistence.config.enabled }}
+        - name: config
+          mountPath: /etc/pihole
+        {{- end }}
+        {{- if .Values.persistence.dnsmasq.enabled }}
+        - name: dnsmasq
+          mountPath: /etc/dnsmasq.d
+        {{- end }}
+        {{- end }}
+      
+       {{- if .Values.sidecar.dnscrypt.enabled }}
+      - name: dnscrypt-proxy
+        image: {{ .Values.sidecar.dnscrypt.image.repository }}:{{ .Values.sidecar.dnscrypt.image.tag }}
+        ports:
+        - containerPort: {{ .Values.sidecar.dnscrypt.port }}
+          name: dnscrypt
+        volumeMounts:
+        - name: dnscrypt-config
+          mountPath: /etc/dnscrypt-proxy
+        {{- if .Values.sidecar.dnscrypt.resources }}
+        resources:
+          {{- toYaml .Values.sidecar.dnscrypt.resources | nindent 10 }}
+        {{- end }}
+      {{- end }}
+
+      volumes:
+      {{- if .Values.persistence.config.enabled }}
+      - name: config
+        persistentVolumeClaim:
+          claimName: {{ include "pihole.fullname" . }}-config
+      {{- end }}
+      {{- if .Values.persistence.dnsmasq.enabled }}
+      - name: dnsmasq
+        persistentVolumeClaim:
+          claimName: {{ include "pihole.fullname" . }}-dnsmasq
+      {{- end }}
+      {{- if .Values.sidecar.dnscrypt.enabled }}
+      - name: dnscrypt-config
+        configMap:
+          name: {{ include "pihole.fullname" . }}-dnscrypt-config
+      {{- end }}
+
+
+      
