@@ -36,7 +36,9 @@ spec:
           {{- toYaml .Values.jellyseerr.resources | nindent 10 }}
       volumes:
       - name: config
-        emptyDir: {}
+        hostPath:
+          path: /opt/media-stack/jellyseerr
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service

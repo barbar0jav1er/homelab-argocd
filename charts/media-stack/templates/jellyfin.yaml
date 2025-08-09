@@ -40,7 +40,9 @@ spec:
           {{- toYaml .Values.jellyfin.resources | nindent 10 }}
       volumes:
       - name: config
-        emptyDir: {}
+        hostPath:
+          path: /opt/media-stack/jellyfin
+          type: DirectoryOrCreate
       - name: media
         persistentVolumeClaim:
           claimName: {{ include "media-stack.fullname" . }}-nfs-pvc

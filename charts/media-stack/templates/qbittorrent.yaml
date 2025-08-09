@@ -54,7 +54,9 @@ spec:
           {{- toYaml .Values.qbittorrent.resources | nindent 10 }}
       volumes:
       - name: config
-        emptyDir: {}
+        hostPath:
+          path: /opt/media-stack/qbittorrent
+          type: DirectoryOrCreate
       - name: downloads
         persistentVolumeClaim:
           claimName: {{ include "media-stack.fullname" . }}-nfs-pvc
