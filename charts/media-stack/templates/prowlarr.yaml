@@ -38,7 +38,9 @@ spec:
           {{- toYaml .Values.prowlarr.resources | nindent 10 }}
       volumes:
       - name: config
-        emptyDir: {}
+        hostPath:
+          path: /opt/media-stack/prowlarr
+          type: DirectoryOrCreate
 ---
 apiVersion: v1
 kind: Service
