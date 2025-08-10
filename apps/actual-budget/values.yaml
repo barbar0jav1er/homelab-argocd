@@ -1,0 +1,70 @@
+actualBudget:
+  port: 5006
+  loginMethod: "openid"
+  timezone: "Asia/Dubai"
+  upload:
+    fileSizeSyncLimitMB: 20
+    syncEncryptedFileSizeLimitMB: 50
+    fileSizeLimitMB: 20
+  openid:
+    enabled: true
+    discoveryUrl: "https://auth.cubancodelab.net/application/o/actual-budget/"
+    clientId: "HuMGawyXSd5V37nIgM7MiTj2lzn0ptZEOJXAbiH7"
+    serverHostname: "https://actual.cubancodelab.net"
+    clientSecret:
+      existingSecret: "actual-budget-openid-secret"
+      existingSecretKey: "CLIENT_SECRET"
+
+# Ingress configuration for external access
+ingress:
+  enabled: true
+  className: "traefik"
+  host: "actual.cubancodelab.net"
+  tls:
+    enabled: true
+    secretName: "actual-server-tls"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+
+# Persistent storage for data
+persistence:
+  enabled: true
+  size: "8Gi"
+
+# Resource limits and requests
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 5006
+
+# Health checks
+healthChecks:
+  enabled: true
+  type: "exec"
+  readiness:
+    path: "/"
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  liveness:
+    path: "/"
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+
+# Service account
+serviceAccount:
+  create: true
+  name: ""
+  annotations: {}
