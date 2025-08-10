@@ -8,11 +8,10 @@ metadata:
 spec:
   project: default
   sources:
-    - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
-      targetRevision: HEAD
-      path: charts/pihole
+    - repoURL: https://helms.cubancodelab.net
+      chart: pihole
+      targetRevision: 0.1.1
       helm:
-        releaseName: pihole
         valueFiles:
           - $values/infrastructure/pihole/values.yaml
     - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
