@@ -5,27 +5,27 @@ metadata:
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
   sources:
-  - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
-    targetRevision: HEAD
-    path: charts/actual-budget
-    helm:
-      valueFiles:
-        - values.yaml
-  - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
-    targetRevision: HEAD
-    path: charts/actual-budget/config
+    - repoURL: https://helms.cubancodelab.net
+      chart: actual-server
+      targetRevision: 0.2.0
+      helm:
+        valueFiles:
+          - $values/apps/actual-budget/values.yaml
+    - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
+      targetRevision: main
+      ref: values
+    - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
+      targetRevision: HEAD
+      path: apps/actual-budget/config
   destination:
     server: https://kubernetes.default.svc
-    namespace: actual-budget
+    namespace: actual
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
     syncOptions:
       - CreateNamespace=true
-      - RespectIgnoreDifferences=true
