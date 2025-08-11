@@ -1,8 +1,32 @@
-# Observability Components Guide - Not Currently Implemented
+# Observability Stack - Homelab Implementation
 
-This document explains the observability components that we are **NOT** implementing initially and why they are important for the future.
+This document covers the current observability implementation and future expansion plans for the homelab cluster.
 
-## Non-Implemented Components
+## ✅ Currently Implemented
+
+### kube-prometheus-stack
+**Deployed via ArgoCD** - Complete monitoring foundation
+
+**Components:**
+- **Prometheus** - Metrics collection and storage
+- **Grafana** - Visualization and dashboards  
+- **Alertmanager** - Alert routing and notification
+- **Node Exporter** - Node-level system metrics
+- **Kube State Metrics** - Kubernetes cluster metrics
+- **Prometheus Operator** - CRD-based configuration
+
+**Namespace:** `monitoring`  
+**Access:** Grafana available via ingress with Authentik SSO
+
+**Current Capabilities:**
+- ✅ Cluster resource monitoring (CPU, Memory, Storage)
+- ✅ Pod and container metrics
+- ✅ Infrastructure component health
+- ✅ Custom dashboards for homelab services
+- ✅ Persistent storage for metrics data
+- ✅ Alert rules for critical issues
+
+## 🔄 Planned Components
 
 ### 1. Loki - Log Aggregation
 
@@ -202,9 +226,9 @@ Allows monitoring of external endpoints via HTTP, HTTPS, DNS, TCP, ICMP.
 ```yaml
 # Monitor external service availability
 - targets:
-  - https://actual-budget.v2.cubancodelab.net
-  - https://jellyfin.v2.cubancodelab.net
-  - https://auth.v2.cubancodelab.net
+  - https://your-actual-budget.domain.com
+  - https://your-jellyfin.domain.com
+  - https://your-authentik.domain.com
 
 # Check SSL certificates nearing expiration
 # Measure latency from user perspective
@@ -213,27 +237,32 @@ Allows monitoring of external endpoints via HTTP, HTTPS, DNS, TCP, ICMP.
 
 ---
 
-## Recommended Roadmap
+## Implementation Roadmap
 
-### Phase 1 (Current)
-- ✅ kube-prometheus-stack (Prometheus + Grafana + Alertmanager)
-- ✅ Basic dashboards
-- ✅ Critical alerts
+### ✅ Phase 1 (Completed)
+- ✅ **kube-prometheus-stack** - Full monitoring foundation
+- ✅ **Basic dashboards** - Cluster and node overview
+- ✅ **Critical alerts** - Infrastructure health monitoring
+- ✅ **Persistent storage** - Metrics retention with NFS
+- ✅ **Secure access** - Grafana with Authentik SSO integration
 
-### Phase 2 (1-2 months)
-- 🔄 Loki + Promtail for centralized logs
-- 🔄 Blackbox exporter for external monitoring
-- 🔄 Advanced dashboards
+### 🔄 Phase 2 (Next: 1-2 months)
+- **Loki + Promtail** for centralized log aggregation
+- **Blackbox exporter** for external service monitoring
+- **Custom dashboards** for homelab applications
+- **Enhanced alerting** rules for application-specific issues
 
-### Phase 3 (3-6 months)
-- 🔄 Grafana Tempo for tracing
-- 🔄 OpenTelemetry instrumentation
-- 🔄 Defined SLI/SLOs
+### 📋 Phase 3 (Future: 3-6 months)
+- **Grafana Tempo** for distributed tracing
+- **OpenTelemetry** instrumentation for applications
+- **SLI/SLO definitions** for service reliability
+- **Advanced alerting** with escalation policies
 
-### Phase 4 (6+ months)
-- 🔄 Custom application metrics
-- 🔄 ML for anomaly detection
-- 🔄 Chaos engineering with observability
+### 🚀 Phase 4 (Advanced: 6+ months)
+- **Custom application metrics** for business logic
+- **Anomaly detection** for proactive monitoring
+- **Chaos engineering** with observability feedback
+- **Cross-cluster monitoring** if expanding infrastructure
 
 ---
 
