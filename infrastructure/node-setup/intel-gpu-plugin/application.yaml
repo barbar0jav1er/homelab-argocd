@@ -31,7 +31,7 @@ spec:
 
   destination:
     server: 'https://kubernetes.default.svc'
-    # No especificamos namespace aquí porque cada source tiene su propio namespace
+    namespace: node-feature-discovery
     
   syncPolicy:
     automated:
