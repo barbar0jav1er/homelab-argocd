@@ -1,0 +1,54 @@
+# ArgoCD Application para Intel GPU Device Plugin con Multiple Sources
+# Ubicación: infrastructure/intel-gpu-plugin/application.yaml
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: intel-gpu-plugin
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: intel-gpu-plugin
+    app.kubernetes.io/part-of: infrastructure
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+  # 1. Node Feature Discovery (prerequisito)
+  - repoURL: 'https://github.com/intel/intel-device-plugins-for-kubernetes'
+    targetRevision: v0.32.0
+    path: deployments/nfd
+  
+  # 2. Node Feature Rules para detectar GPUs Intel
+  - repoURL: 'https://github.com/intel/intel-device-plugins-for-kubernetes'
+    targetRevision: v0.32.0
+    path: deployments/nfd/overlays/node-feature-rules
+  
+  # 3. GPU Device Plugin (se despliega solo en nodos con GPU)
+  - repoURL: 'https://github.com/intel/intel-device-plugins-for-kubernetes'
+    targetRevision: v0.32.0
+    path: deployments/gpu_plugin/overlays/nfd_labeled_nodes
+
+  destination:
+    server: 'https://kubernetes.default.svc'
+    # No especificamos namespace aquí porque cada source tiene su propio namespace
+    
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - ServerSideApply=true
+    - ApplyOutOfSyncOnly=true
+    
+  # Configuración para manejar diferencias menores
+  ignoreDifferences:
+  - group: apps
+    kind: DaemonSet
+    jsonPointers:
+    - /spec/template/spec/containers/0/image
+  - group: apps
+    kind: Deployment
+    jsonPointers:
+    - /spec/template/spec/containers/0/image
