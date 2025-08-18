@@ -1,0 +1,436 @@
+# Global values for the media stack
+global:
+  domain: cubancodelab.net
+  storageClass: "nfs-ssd-fast"
+  timezone: "Asia/Dubai"
+  puid: "1000"
+  pgid: "1000"
+
+# Jellyfin - Media server
+jellyfin:
+  enabled: true
+  nameOverride: ""
+  fullnameOverride: ""
+  replicaCount: 1
+  
+  image:
+    repository: jellyfin/jellyfin
+    tag: "10.10.7"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 8096
+  
+  ingress:
+    enabled: true
+    className: ""
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    hosts:
+      - host: jellyfin.cubancodelab.net
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - hosts:
+          - jellyfin.cubancodelab.net
+        secretName: jellyfin-tls
+  
+  persistence:
+    config:
+      enabled: true
+      storageClass: "nfs-ssd-fast"
+      accessMode: ReadWriteOnce
+      size: 5Gi
+    
+    cache:
+      enabled: true
+      storageClass: "nfs-ssd-fast"
+      accessMode: ReadWriteOnce
+      size: 10Gi
+    
+    media:
+      enabled: true
+      storageClass: ""
+      accessMode: ReadWriteMany
+      size: 100Gi
+      existingClaim: "shared-media-pvc"
+  
+  env:
+    JELLYFIN_PublishedServerUrl: "https://jellyfin.cubancodelab.net"
+    TZ: "Asia/Dubai"
+    
+  extraEnv: []
+  
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
+  
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+      gpu.intel.com/i915: 1
+    requests:
+      cpu: 500m
+      memory: 1Gi
+      gpu.intel.com/i915: 1
+  
+  hardwareAcceleration:
+    enabled: true
+    type: "intel"
+    intel:
+      enableDevices: true
+      renderGroup: 993
+  
+  healthChecks:
+    liveness:
+      enabled: true
+      httpGet:
+        path: /health
+        port: http
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    
+    readiness:
+      enabled: true
+      httpGet:
+        path: /health
+        port: http
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+      successThreshold: 1
+    
+    startup:
+      enabled: true
+      httpGet:
+        path: /health
+        port: http
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 30
+      successThreshold: 1
+  
+  serviceAccount:
+    create: true
+    name: ""
+    annotations: {}
+  
+  nodeSelector:
+    gpu.intel.com/device-id.0300-46a6.present: "true"
+
+# Radarr - Movie management
+radarr:
+  enabled: true
+  
+  env:
+    PUID: "1000"
+    PGID: "1000"
+    TZ: "Asia/Dubai"
+  
+  service:
+    type: ClusterIP
+    port: 7878
+  
+  ingress:
+    enabled: true
+    className: "traefik"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    host: radarr.cubancodelab.net
+    tls:
+      enabled: true
+      secretName: radarr-tls
+  
+  persistence:
+    config:
+      enabled: true
+      size: 2Gi
+      storageClass: "nfs-ssd-fast"
+    media:
+      enabled: true
+      existingClaim: "shared-media-pvc"
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+
+# Sonarr - TV series management
+sonarr:
+  enabled: true
+  
+  env:
+    PUID: "1000"
+    PGID: "1000"
+    TZ: "Asia/Dubai"
+  
+  service:
+    type: ClusterIP
+    port: 8989
+  
+  ingress:
+    enabled: true
+    className: "traefik"
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    host: sonarr.cubancodelab.net
+    tls:
+      enabled: true
+      secretName: sonarr-tls
+  
+  persistence:
+    config:
+      enabled: true
+      size: 2Gi
+      storageClass: "nfs-ssd-fast"
+    tv:
+      enabled: true
+      existingClaim: "shared-media-pvc"
+      subPath: "tv"
+    media:
+      enabled: true
+      existingClaim: "shared-media-pvc"
+
+# Jellyseerr - Request management for Plex/Jellyfin
+jellyseerr:
+  enabled: true
+  nameOverride: ""
+  fullnameOverride: ""
+  replicaCount: 1
+  
+  image:
+    repository: fallenbagel/jellyseerr
+    tag: "latest"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 5055
+  
+  ingress:
+    enabled: true
+    className: ""
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    hosts:
+      - host: jellyseerr.cubancodelab.net
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - hosts:
+          - jellyseerr.cubancodelab.net
+        secretName: jellyseerr-tls
+  
+  persistence:
+    config:
+      enabled: true
+      storageClass: "nfs-ssd-fast"
+      accessMode: ReadWriteOnce
+      size: 2Gi
+  
+  env:
+    LOG_LEVEL: "info"
+    TZ: "Asia/Dubai"
+    PORT: "5055"
+  
+  extraEnv: []
+  
+  securityContext:
+    runAsUser: 999
+    runAsGroup: 999
+    runAsNonRoot: true
+  
+  podSecurityContext:
+    fsGroup: 999
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+  
+  healthChecks:
+    liveness:
+      enabled: true
+      httpGet:
+        path: /api/v1/status
+        port: http
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    
+    readiness:
+      enabled: true
+      httpGet:
+        path: /api/v1/status
+        port: http
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 3
+      successThreshold: 1
+    
+    startup:
+      enabled: true
+      httpGet:
+        path: /api/v1/status
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      timeoutSeconds: 3
+      failureThreshold: 15
+      successThreshold: 1
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  podAnnotations: {}
+  
+  serviceAccount:
+    create: false
+    annotations: {}
+    name: ""
+  
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
+
+# Prowlarr - Indexer manager
+prowlarr:
+  enabled: true
+  
+  env:
+    PUID: "1000"
+    PGID: "1000"
+    TZ: "Asia/Dubai"
+  
+  service:
+    type: ClusterIP
+    port: 9696
+  
+  ingress:
+    enabled: true
+    className: ""
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    host: prowlarr.cubancodelab.net
+    tls:
+      enabled: true
+      secretName: prowlarr-tls
+  
+  persistence:
+    config:
+      enabled: true
+      size: 1Gi
+      storageClass: "nfs-ssd-fast"
+
+# qBittorrent - Torrent client
+qbittorrent:
+  enabled: true
+  
+  env:
+    PUID: "1000"
+    PGID: "1000"
+    TZ: "Asia/Dubai"
+    WEBUI_PORT: "8080"
+  
+  service:
+    type: ClusterIP
+    port: 8080
+  
+  ingress:
+    enabled: true
+    className: ""
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    host: qbittorrent.cubancodelab.net
+    tls:
+      enabled: true
+      secretName: qbittorrent-tls
+  
+  persistence:
+    config:
+      enabled: true
+      size: 2Gi
+      storageClass: "nfs-ssd-fast"
+    downloads:
+      enabled: true
+      existingClaim: "shared-media-pvc"
+      subPath: "downloads"
+  
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+
+# Flaresolverr - Cloudflare solver
+flaresolverr:
+  enabled: true
+  
+  service:
+    type: ClusterIP
+    port: 8191
+  
+  ingress:
+    enabled: false
+
+# Bazarr - Subtitle management
+bazarr:
+  enabled: true
+ 
+  env:
+    PUID: "1000"
+    PGID: "1000"
+    TZ: "Asia/Dubai"
+  
+  service:
+    type: ClusterIP
+    port: 6767
+  
+  ingress:
+    enabled: true
+    className: ""
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    host: bazarr.cubancodelab.net
+    tls:
+      enabled: true
+      secretName: bazarr-tls
+  
+  persistence:
+    config:
+      enabled: true
+      size: 1Gi
+      storageClass: "nfs-ssd-fast"
+    media:
+      enabled: true
+      existingClaim: "shared-media-pvc"
