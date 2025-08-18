@@ -359,8 +359,14 @@ qbittorrent:
     WEBUI_PORT: "8080"
   
   service:
-    type: ClusterIP
-    port: 8080
+    webui:
+      enabled: true
+      type: ClusterIP
+      port: 8080
+    torrenting:
+      enabled: true
+      type: LoadBalancer
+      port: 6881
   
   ingress:
     enabled: true
@@ -369,6 +375,7 @@ qbittorrent:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
       traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
     host: qbittorrent.cubancodelab.net
+    path: /
     tls:
       enabled: true
       secretName: qbittorrent-tls
@@ -376,20 +383,43 @@ qbittorrent:
   persistence:
     config:
       enabled: true
-      size: 2Gi
       storageClass: "nfs-ssd-fast"
+      accessMode: ReadWriteOnce
+      size: 5Gi
     downloads:
       enabled: true
-      existingClaim: "shared-media-pvc"
-      subPath: "downloads"
+      existingClaim: 'shared-media-pvc'
+  
+  podSecurityContext:
+    fsGroup: 1000
+  
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    runAsNonRoot: true
   
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 2000m
+      memory: 2Gi
     requests:
-      cpu: 200m
+      cpu: 500m
       memory: 512Mi
+  
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  
+  podAnnotations: {}
+  
+  serviceAccount:
+    create: true
+    annotations: {}
+    name: ""
+  
+  podDisruptionBudget:
+    enabled: false
+    minAvailable: 1
 
 # Flaresolverr - Cloudflare solver
 flaresolverr:
