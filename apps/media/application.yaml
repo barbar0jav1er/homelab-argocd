@@ -1,24 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: media-stack
+  name: media
   namespace: argocd
   finalizers:
     - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   sources:
     - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
       targetRevision: HEAD
-      path: charts/media-stack
+      path: charts/media
       helm:
         valueFiles:
           - values.yaml
     - repoURL: git@github.com:barbar0jav1er/homelab-argocd.git
       targetRevision: HEAD
-      path: apps/media-stack
+      path: apps/media
       directory:
         include: "*.yaml"
         exclude: "application.yaml"
