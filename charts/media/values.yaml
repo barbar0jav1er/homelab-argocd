@@ -348,78 +348,199 @@ prowlarr:
       size: 1Gi
       storageClass: "nfs-ssd-fast"
 
-# qBittorrent - Torrent client
+# qBittorrent with Gluetun VPN - Torrent client
 qbittorrent:
   enabled: true
   
-  env:
-    PUID: "1000"
-    PGID: "1000"
-    TZ: "Asia/Dubai"
-    WEBUI_PORT: "8080"
+  # Pod Security Context - Required for VPN functionality
+  podSecurityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+    fsGroup: 0
   
-  service:
-    webui:
-      enabled: true
-      type: ClusterIP
+  # qBittorrent Container Configuration
+  qbittorrent:
+    image:
+      repository: linuxserver/qbittorrent
+      tag: 5.1.0
+      pullPolicy: IfNotPresent
+    
+    securityContext: {}
+    bittorrentPort: 6881
+    
+    env:
+      - name: PUID
+        value: "1000"
+      - name: PGID
+        value: "1000"
+      - name: TZ
+        value: "Asia/Dubai"
+      - name: WEBUI_PORT
+        value: "8080"
+    
+    extraEnv: []
+    
+    service:
       port: 8080
-    torrenting:
-      enabled: true
-      type: LoadBalancer
-      port: 6881
+    
+    persistence:
+      config:
+        enabled: true
+        existingClaim: ""
+        storageClass: "nfs-ssd-fast"
+        accessMode: ReadWriteOnce
+        size: 5Gi
+        mountPath: /config
+      
+      downloads:
+        enabled: true
+        existingClaim: "shared-media-pvc"
+        storageClass: ""
+        accessMode: ReadWriteOnce
+        size: 100Gi
+        mountPath: /downloads
+    
+    extraVolumeMounts: []
+    extraVolumes: []
   
+  # Health Check Probes
+  probes:
+    liveness:
+      enabled: true
+      path: /
+      initialDelaySeconds: 60
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+    
+    readiness:
+      enabled: true
+      path: /
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+      successThreshold: 1
+  
+  # Gluetun VPN Sidecar Container Configuration
+  gluetun:
+    enabled: true
+    
+    image:
+      repository: qmcgaw/gluetun
+      tag: v3.40.0
+      pullPolicy: IfNotPresent
+    
+    securityContext:
+      privileged: true
+      capabilities:
+        add:
+          - NET_ADMIN
+    
+    # NordVPN Configuration
+    vpn:
+      provider: "nordvpn"
+      type: "openvpn"
+      serverCountries: "Netherlands"
+      serverCities: ""
+      serverNames: ""
+      randomize: "true"
+      
+      openvpn:
+        OPENVPN_PROTOCOL: "udp"
+      
+      wireguard:
+        privateKey: ""
+        privateKeyExistingSecret: ""
+        privateKeyExistingSecretKey: ""
+        addresses: ""
+        endpointIP: ""
+        endpointPort: ""
+        publicKey: ""
+    
+    # NordVPN Credentials (will use sealed secret)
+    credentials:
+      create: true
+      username: ""
+      password: ""
+      existingSecret: "nordvpn-credentials"
+      usernameKey: "username"
+      passwordKey: "password"
+    
+    # Gluetun Settings
+    settings:
+      FIREWALL: "on"
+      FIREWALL_OUTBOUND_SUBNETS: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+      DNS_ADDRESS: "1.1.1.1"
+      HEALTH_SERVER_PORT: "8000"
+      SERVER_ALLOWLIST: "qbittorrent:8080"
+      FIREWALL_INPUT_PORTS: "8080"
+      FIREWALL_DEBUG: "on"
+      JOURNALD: "off"
+      VPN_PORT_FORWARDING: "off"
+    
+    extraEnv:
+      - name: LOG_LEVEL
+        value: "info"
+    
+    extraPorts: []
+    
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 200m
+        memory: 256Mi
+    
+    persistence:
+      enabled: true
+      useEmptyDir: false
+      existingClaim: false
+      storageClass: "nfs-ssd-fast"
+      accessMode: ReadWriteOnce
+      size: 100Mi
+      
+    extraVolumeMounts: []
+    extraVolumes: []
+  
+  # Kubernetes Service Configuration
+  service:
+    type: ClusterIP
+    port: 8080
+  
+  # Ingress Configuration
   ingress:
     enabled: true
     className: ""
     annotations:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
       traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
-    host: qbittorrent.cubancodelab.net
-    path: /
+    
+    hosts:
+      - host: qbittorrent.cubancodelab.net
+        paths:
+          - path: /
+            pathType: Prefix
+    
     tls:
-      enabled: true
-      secretName: qbittorrent-tls
+      - hosts:
+          - qbittorrent.cubancodelab.net
+        secretName: qbittorrent-tls
   
-  persistence:
-    config:
-      enabled: true
-      storageClass: "nfs-ssd-fast"
-      accessMode: ReadWriteOnce
-      size: 5Gi
-    downloads:
-      enabled: true
-      existingClaim: 'shared-media-pvc'
-  
-  podSecurityContext:
-    fsGroup: 1000
-  
-  securityContext:
-    runAsUser: 1000
-    runAsGroup: 1000
-    runAsNonRoot: true
-  
-  resources:
-    limits:
-      cpu: 2000m
-      memory: 2Gi
-    requests:
-      cpu: 500m
-      memory: 512Mi
-  
+  # Pod Scheduling and Placement
   nodeSelector: {}
   tolerations: []
   affinity: {}
   
+  # Pod Annotations and Additional Configuration
   podAnnotations: {}
+  extraVolumes: []
   
-  serviceAccount:
-    create: true
-    annotations: {}
-    name: ""
-  
-  podDisruptionBudget:
-    enabled: false
-    minAvailable: 1
+  # Development and Debugging Options
+  hostNetwork: false
+  initContainers: []
 
 # Flaresolverr - Cloudflare solver
 flaresolverr:
