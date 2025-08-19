@@ -47,9 +47,9 @@ jellyfin:
     
     cache:
       enabled: true
-      storageClass: "nfs-ssd-fast"
+      storageClass: "fast-ssd-critical"
       accessMode: ReadWriteOnce
-      size: 10Gi
+      size: 50Gi
     
     media:
       enabled: true
@@ -216,8 +216,13 @@ jellyseerr:
   
   image:
     repository: fallenbagel/jellyseerr
-    tag: "latest"
+    tag: latest
     pullPolicy: IfNotPresent
+  
+  env:
+    PUID: "1000"
+    PGID: "1000"
+    TZ: "Asia/Dubai"
   
   service:
     type: ClusterIP
@@ -229,96 +234,56 @@ jellyseerr:
     annotations:
       cert-manager.io/cluster-issuer: "letsencrypt-prod"
       traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
-    hosts:
-      - host: jellyseerr.cubancodelab.net
-        paths:
-          - path: /
-            pathType: Prefix
+    host: jellyseerr.cubancodelab.net
     tls:
-      - hosts:
-          - jellyseerr.cubancodelab.net
-        secretName: jellyseerr-tls
+      enabled: true
+      secretName: jellyseerr-tls
   
   persistence:
     config:
       enabled: true
-      storageClass: "nfs-ssd-fast"
-      accessMode: ReadWriteOnce
       size: 2Gi
-  
-  env:
-    LOG_LEVEL: "info"
-    TZ: "Asia/Dubai"
-    PORT: "5055"
-  
-  extraEnv: []
-  
-  securityContext:
-    runAsUser: 999
-    runAsGroup: 999
-    runAsNonRoot: true
-  
-  podSecurityContext:
-    fsGroup: 999
-    runAsUser: 999
-    runAsGroup: 999
+      storageClass: "nfs-ssd-fast"
+      existingClaim: ""
   
   resources:
     limits:
-      cpu: 1000m
-      memory: 1Gi
+      cpu: 500m
+      memory: 512Mi
     requests:
-      cpu: 200m
-      memory: 256Mi
+      cpu: 100m
+      memory: 128Mi
   
-  healthChecks:
-    liveness:
-      enabled: true
-      httpGet:
-        path: /api/v1/status
-        port: http
-      initialDelaySeconds: 60
-      periodSeconds: 30
-      timeoutSeconds: 5
-      failureThreshold: 3
-      successThreshold: 1
-    
-    readiness:
-      enabled: true
-      httpGet:
-        path: /api/v1/status
-        port: http
-      initialDelaySeconds: 30
-      periodSeconds: 10
-      timeoutSeconds: 3
-      failureThreshold: 3
-      successThreshold: 1
-    
-    startup:
-      enabled: true
-      httpGet:
-        path: /api/v1/status
-        port: http
-      initialDelaySeconds: 20
-      periodSeconds: 10
-      timeoutSeconds: 3
-      failureThreshold: 15
-      successThreshold: 1
+  livenessProbe:
+    httpGet:
+      path: /api/v1/status
+      port: 5055
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 5
+    failureThreshold: 3
+  
+  readinessProbe:
+    httpGet:
+      path: /api/v1/status
+      port: 5055
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  
+  startupProbe:
+    httpGet:
+      path: /api/v1/status
+      port: 5055
+    initialDelaySeconds: 20
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 15
   
   nodeSelector: {}
   tolerations: []
   affinity: {}
-  
-  podAnnotations: {}
-  
-  serviceAccount:
-    create: false
-    annotations: {}
-    name: ""
-  
-  podDisruptionBudget:
-    enabled: false
-    minAvailable: 1
 
 # Prowlarr - Indexer manager
 prowlarr:

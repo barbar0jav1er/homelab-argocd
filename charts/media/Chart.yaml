@@ -19,7 +19,7 @@ dependencies:
     repository: https://helms.cubancodelab.net/
     condition: sonarr.enabled
   - name: jellyseerr
-    version: 0.1.0
+    version: 0.1.1
     repository: https://helms.cubancodelab.net/
     condition: jellyseerr.enabled
   - name: prowlarr
