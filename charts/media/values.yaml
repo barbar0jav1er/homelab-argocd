@@ -461,7 +461,7 @@ qbittorrent:
     
     # NordVPN Credentials (will use sealed secret)
     credentials:
-      create: true
+      create: false
       username: ""
       password: ""
       existingSecret: "nordvpn-credentials"
