@@ -27,7 +27,7 @@ dependencies:
     repository: https://helms.cubancodelab.net/
     condition: prowlarr.enabled
   - name: qbittorrent
-    version: 0.4.0
+    version: 0.4.1
     repository: https://helms.cubancodelab.net/
     condition: qbittorrent.enabled
   - name: flaresolverr
