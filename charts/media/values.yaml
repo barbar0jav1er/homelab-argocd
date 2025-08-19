@@ -260,6 +260,8 @@ jellyseerr:
   
   podSecurityContext:
     fsGroup: 999
+    runAsUser: 999
+    runAsGroup: 999
   
   resources:
     limits:
