@@ -408,7 +408,7 @@ qbittorrent:
     # NordVPN Configuration
     vpn:
       provider: "nordvpn"
-      type: "openvpn"
+      type: "wireguard"
       serverCountries: "Netherlands"
       serverCities: ""
       serverNames: ""
@@ -419,14 +419,14 @@ qbittorrent:
       
       wireguard:
         privateKey: ""
-        privateKeyExistingSecret: ""
-        privateKeyExistingSecretKey: ""
+        privateKeyExistingSecret: "nordvpn-wireguard-key"
+        privateKeyExistingSecretKey: "private_key"
         addresses: ""
         endpointIP: ""
         endpointPort: ""
         publicKey: ""
     
-    # NordVPN Credentials (will use sealed secret)
+    # NordVPN Credentials (will use existing sealed secret for username/password)
     credentials:
       create: false
       username: ""
