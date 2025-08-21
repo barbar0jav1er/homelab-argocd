@@ -550,7 +550,103 @@ bazarr:
     config:
       enabled: true
       size: 1Gi
-      storageClass: "nfs-ssd-fast"
+      storageClass: "fast-ssd-critical"
     media:
       enabled: true
       existingClaim: "shared-media-pvc"
+
+# Transmission with OpenVPN - Alternative torrent client
+transmission-openvpn:
+  enabled: true
+  
+  replicaCount: 1
+  
+  image:
+    repository: haugene/transmission-openvpn
+    tag: "4.0"
+    pullPolicy: IfNotPresent
+  
+  securityContext:
+    capabilities:
+      add:
+        - NET_ADMIN
+  
+  service:
+    type: ClusterIP
+    port: 9091
+  
+  ingress:
+    enabled: true
+    className: ""
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
+    hosts:
+      - host: transmission.cubancodelab.net
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - hosts:
+          - transmission.cubancodelab.net
+        secretName: transmission-tls
+  
+  persistence:
+    enabled: true
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 10Gi
+    existingClaim: ""
+  
+  # Environment variables for Transmission + NordVPN
+  env:
+    PUID: "1000"
+    PGID: "1000"
+    TZ: "Asia/Dubai"
+    OPENVPN_PROVIDER: "NORDVPN"
+    NORDVPN_COUNTRY: "NL"  # Netherlands
+    NORDVPN_CATEGORY: "legacy_p2p"  # P2P optimized servers
+    NORDVPN_PROTOCOL: "udp"
+    CREATE_TUN_DEVICE: "true"
+    WEBPROXY_ENABLED: "false"
+    LOCAL_NETWORK: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    TRANSMISSION_SPEED_LIMIT_UP_ENABLED: "true"
+    TRANSMISSION_SPEED_LIMIT_UP: "2048"
+    TRANSMISSION_RATIO_LIMIT_ENABLED: "true"
+    TRANSMISSION_RATIO_LIMIT: "2"
+    TRANSMISSION_DOWNLOAD_DIR: "/downloads/complete"
+    TRANSMISSION_INCOMPLETE_DIR: "/downloads/incomplete"
+    TRANSMISSION_WATCH_DIR_ENABLED: "true"
+    TRANSMISSION_WATCH_DIR: "/downloads/watch"
+  
+  # Sensitive environment variables (will use sealed secret)
+  secretEnv:
+    OPENVPN_USERNAME: ""
+    OPENVPN_PASSWORD: ""
+  
+  # Use existing NordVPN credentials
+  existingSecret: "nordvpn-credentials"
+  secretKeys:
+    username: "username"
+    password: "password"
+  
+  mountTunDevice: true
+  
+  # Additional volume mounts for media
+  extraVolumeMounts:
+    - mountPath: /downloads
+      name: downloads
+  
+  extraVolumes:
+    - name: downloads
+      persistentVolumeClaim:
+        claimName: shared-media-pvc
+  
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 256Mi

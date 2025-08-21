@@ -1,6 +1,6 @@
 apiVersion: v2
 name: media
-description: A Helm umbrella chart for media management stack (Jellyfin, Radarr, Sonarr, Jellyseerr, Prowlarr, qBittorrent, Bazarr, Flaresolverr)
+description: A Helm umbrella chart for media management stack (Jellyfin, Radarr, Sonarr, Jellyseerr, Prowlarr, qBittorrent, Bazarr, Flaresolverr, Transmission)
 type: application
 version: 0.1.0
 appVersion: "1.0"
@@ -38,3 +38,7 @@ dependencies:
     version: 0.1.2
     repository: https://helms.cubancodelab.net/
     condition: bazarr.enabled
+  - name: transmission-openvpn
+    version: 2.5.0
+    repository: https://utkuozdemir.org/helm-charts
+    condition: transmission-openvpn.enabled
