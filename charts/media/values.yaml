@@ -405,18 +405,19 @@ qbittorrent:
         add:
           - NET_ADMIN
     
-    # NordVPN Configuration
+    # ProtonVPN Configuration
     vpn:
-      provider: "nordvpn"
+      provider: "protonvpn"
       type: "openvpn"
-      serverCountries: "Netherlands,Germany,Switzerland"
-      serverCities: "Amsterdam,Frankfurt,Zurich"
+      serverCountries: "Switzerland"
+      serverCities: ""
       serverNames: ""
       randomize: "true"
       
       openvpn:
         OPENVPN_PROTOCOL: "udp"
-        NORDVPN_CATEGORY: 'P2P'
+        PROTONVPN_TIER: "2"
+        SERVER_FEATURES: "p2p"
       
       wireguard:
         privateKey: ""
@@ -427,12 +428,12 @@ qbittorrent:
         endpointPort: ""
         publicKey: ""
     
-    # NordVPN Credentials (will use existing sealed secret for username/password)
+    # ProtonVPN Credentials (will use sealed secret for username/password)
     credentials:
       create: false
       username: ""
       password: ""
-      existingSecret: "nordvpn-credentials"
+      existingSecret: "protonvpn-credentials"
       usernameKey: "username"
       passwordKey: "password"
     
