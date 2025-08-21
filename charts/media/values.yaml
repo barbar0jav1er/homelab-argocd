@@ -408,19 +408,20 @@ qbittorrent:
     # NordVPN Configuration
     vpn:
       provider: "nordvpn"
-      type: "wireguard"
-      serverCountries: "Netherlands"
-      serverCities: ""
+      type: "openvpn"
+      serverCountries: "Netherlands,Germany,Switzerland"
+      serverCities: "Amsterdam,Frankfurt,Zurich"
       serverNames: ""
       randomize: "true"
       
       openvpn:
         OPENVPN_PROTOCOL: "udp"
+        NORDVPN_CATEGORY: 'P2P'
       
       wireguard:
         privateKey: ""
-        privateKeyExistingSecret: "nordvpn-wireguard-key"
-        privateKeyExistingSecretKey: "private_key"
+        privateKeyExistingSecret: ""
+        privateKeyExistingSecretKey: ""
         addresses: ""
         endpointIP: ""
         endpointPort: ""
