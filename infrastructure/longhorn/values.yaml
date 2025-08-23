@@ -1,0 +1,15 @@
+preUpgradeChecker:
+  jobEnabled: false
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  host: longhorn.cubancodelab.net
+  tls: true
+  secureBackends: false
+  tlsSecret: longhorn-tls
+  path: /
+  pathType: Prefix
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    traefik.ingress.kubernetes.io/router.entrypoints: "web,websecure"
