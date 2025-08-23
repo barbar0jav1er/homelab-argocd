@@ -1,7 +1,7 @@
 # Global values for the media stack
 global:
   domain: cubancodelab.net
-  storageClass: "nfs-ssd-fast"
+  storageClass: "longhorn"
   timezone: "Asia/Dubai"
   puid: "1000"
   pgid: "1000"
@@ -41,15 +41,13 @@ jellyfin:
   persistence:
     config:
       enabled: true
-      storageClass: "nfs-ssd-fast"
+      storageClass: "longhorn"
       accessMode: ReadWriteOnce
-      size: 5Gi
+      size: 1Gi
     
     cache:
-      enabled: true
-      storageClass: "fast-ssd-critical"
-      accessMode: ReadWriteOnce
-      size: 50Gi
+      emptyDir:
+        sizeLimit: 5Gi
     
     media:
       enabled: true
@@ -156,8 +154,8 @@ radarr:
   persistence:
     config:
       enabled: true
-      size: 2Gi
-      storageClass: "nfs-ssd-fast"
+      size: 1Gi
+      storageClass: "longhorn"
     media:
       enabled: true
       existingClaim: "shared-media-pvc"
@@ -197,12 +195,8 @@ sonarr:
   persistence:
     config:
       enabled: true
-      size: 2Gi
-      storageClass: "nfs-ssd-fast"
-    tv:
-      enabled: true
-      existingClaim: "shared-media-pvc"
-      subPath: "tv"
+      size: 1Gi
+      storageClass: "longhorn"
     media:
       enabled: true
       existingClaim: "shared-media-pvc"
@@ -242,8 +236,8 @@ jellyseerr:
   persistence:
     config:
       enabled: true
-      size: 2Gi
-      storageClass: "nfs-ssd-fast"
+      size: 1Gi
+      storageClass: "longhorn"
       existingClaim: ""
   
   resources:
@@ -313,11 +307,11 @@ prowlarr:
     config:
       enabled: true
       size: 1Gi
-      storageClass: "nfs-ssd-fast"
+      storageClass: "longhorn"
 
 # qBittorrent with Gluetun VPN - Torrent client
 qbittorrent:
-  enabled: true
+  enabled: false
   
   # Pod Security Context - Required for VPN functionality
   podSecurityContext:
@@ -354,7 +348,7 @@ qbittorrent:
       config:
         enabled: true
         existingClaim: ""
-        storageClass: "nfs-ssd-fast"
+        storageClass: "longhorn"
         accessMode: ReadWriteOnce
         size: 5Gi
         mountPath: /config
@@ -467,7 +461,7 @@ qbittorrent:
       enabled: true
       useEmptyDir: false
       existingClaim: false
-      storageClass: "nfs-ssd-fast"
+      storageClass: "longhorn"
       accessMode: ReadWriteOnce
       size: 100Mi
       
@@ -549,8 +543,8 @@ bazarr:
   persistence:
     config:
       enabled: true
-      size: 1Gi
-      storageClass: "fast-ssd-critical"
+      size: 100Mi
+      storageClass: "longhorn"
     media:
       enabled: true
       existingClaim: "shared-media-pvc"

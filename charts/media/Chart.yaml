@@ -7,7 +7,7 @@ appVersion: "1.0"
 
 dependencies:
   - name: jellyfin
-    version: 0.1.0
+    version: 0.2.0
     repository: https://helms.cubancodelab.net/
     condition: jellyfin.enabled
   - name: radarr

@@ -10,7 +10,7 @@ spec:
   sources:
     - repoURL: https://helms.cubancodelab.net
       chart: actual-server
-      targetRevision: 0.2.0
+      targetRevision: 0.3.0
       helm:
         valueFiles:
           - $values/apps/actual-budget/values.yaml
